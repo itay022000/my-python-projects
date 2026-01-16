@@ -1,0 +1,55 @@
+Problems in the training file:
+
+Exercise 4 - Dataset 1:
+- Question 2 - Correct answer is not accepted
+- Question 3 - Correct answer is not displayed (wrong answer)
+- Question 4 - Correct answer is not accepted
+- Question 4 - Correct answer is not displayed (wrong answer)
+- Question 6 - Correct answer is not accepted
+
+Exercise 5 - Dataset 1:
+- Question 3 - Correct answers are not accepted
+- Question 4 - Correct answers are not accepted
+- Question 5 - Correct answer is not displayed (wrong answer)
+- Question 8 - Correct answer is not accepted
+
+Exercise 2 - Dataset 2:
+- Question 6 - Correct answer is not accepted
+- Question 8 - Correct answer is not accepted
+
+Exercise 2 - Dataset 3:
+- Question 6 - Correct answer is not accepted
+- Question 8 - Correct answer is not accepted
+
+Exercise 4 - Dataset 2:
+- Question 1 - Correct answer is not displayed (wrong answer)
+- Question 2 - Correct answer is not accepted
+- Question 3 - Correct answer is not displayed (wrong answer)
+- Question 4 - Correct answer is not displayed (wrong answer)
+- Question 4 - Correct answer is not accepted
+- Question 6 - Correct answer is not accepted
+- Question 8 - Question is skipped after one wrong answer
+
+Exercise 5 - Dataset 2:
+- Question 3 - Correct answers are not accepted
+- Question 4 - Correct answers are not accepted
+- Question 5 - Correct answer is not displayed (wrong answer)
+- Question 7 - Correct answer is not displayed (wrong answer)
+- Question 8 - Correct answer is not accepted
+
+Exercise 4 - Dataset 3:
+- Question 1 - Correct answer is not displayed (wrong answer)
+- Question 2 - Correct answer is not accepted
+- Question 3 - Correct answer is not displayed (wrong answer)
+- Question 4 - Correct answer is not accepted
+- Question 6 - Correct answer is not accepted
+
+Exercise 5 - Dataset 3:
+- Question 3 - Correct answers are not accepted
+- Question 4 - Correct answers are not accepted
+- Question 5 - Correct answer is not displayed (wrong answer)
+- Question 7 - Correct answer is not displayed (wrong answer)
+- Question 8 - Correct answer is not accepted
+
+Total: 35 problems
+

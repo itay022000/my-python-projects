@@ -1,0 +1,18 @@
+{
+    "venvPath": "/Users/shanitiomkin/anaconda3",
+    "venv": "base",
+    "pythonVersion": "3.10",
+    "pythonPlatform": "Darwin",
+    "executionEnvironments": [
+        {
+            "root": ".",
+            "pythonVersion": "3.10",
+            "pythonPlatform": "Darwin",
+            "extraPaths": [
+                "/Users/shanitiomkin/anaconda3/lib/python3.10/site-packages"
+            ]
+        }
+    ],
+    "reportMissingImports": false
+}
+
