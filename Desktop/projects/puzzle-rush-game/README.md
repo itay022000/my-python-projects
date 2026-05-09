@@ -1,64 +1,54 @@
 # Puzzle Rush Game - NumPy Challenge Collection
 
-A collection of interactive games to practice and master NumPy concepts.
+Interactive terminal games for practicing NumPy topics through short code and true/false challenges.
 
-## Games Overview
+## Games
 
-### 1. **Array Blitz** (`array_blitz.py`)
-Focus: **Arrays** - creation, indexing, slicing, shape, reshape, join, split, search, sort, filter
+- `array_blitz.py` - Arrays (creation, indexing, slicing, reshape, join/split, search/sort/filter)
+- `vector_battle.py` - Random operations (permutation vs shuffle, distributions, choice/randint/random)
+- `matrix_challenge.py` - Matrix operations (2D arrays, matrix math, transpose, reshape, properties)
+- `ufunc_arena.py` - Universal functions (arithmetic, rounding, logs, sums/products/diffs, set ops)
 
-### 2. **Vector Battle** (`vector_battle.py`)
-Focus: **Random & Permutations** - data distribution, permutation vs shuffle, random array generation
+## Requirements
 
-### 3. **Matrix Challenge** (`matrix_challenge.py`)
-Focus: **Matrix Operations** - 2D arrays, matrix math, transformations
-
-### 4. **Ufunc Arena** (`ufunc_arena.py`)
-Focus: **Universal Functions** - arithmetic, rounding, logs, summations, products, differences, LCM/GCD, set operations
-
-## Getting Started
-
-### Prerequisites
 ```bash
-pip install numpy
+pip install -r requirements.txt
 ```
 
-### Project Structure
+## Run a game
+
+From this directory:
+
+```bash
+python3 array_blitz.py
+python3 vector_battle.py
+python3 matrix_challenge.py
+python3 ufunc_arena.py
 ```
-puzzle-rush-game/
-├── README.md              # This file
-├── array_blitz.py         # Array operations game
-├── vector_battle.py       # Random & permutation game
-├── matrix_challenge.py    # Matrix operations game
-├── ufunc_arena.py         # Ufunc operations game
-└── IMPLEMENTATION_GUIDE.md # Detailed implementation instructions
+
+## Verification
+
+Run the smoke verifier from this directory:
+
+```bash
+python3 verify_phase0_smoke.py
 ```
 
-## Learning Objectives
+It checks:
+- module import smoke
+- challenge generator output shape across difficulties
+- quick CLI entry smoke for each game
+- guard that `play_game()` includes true/false scheduling
 
-By implementing these games, you'll practice:
+## Project architecture
 
-- **Array Operations**: Creating, manipulating, and transforming arrays
-- **Random Operations**: Understanding distributions, permutations, and shuffling
-- **Matrix Math**: Working with 2D arrays and matrix operations
-- **Universal Functions**: Using NumPy's powerful ufunc capabilities
+- `engine.py` - Shared session engine (difficulty flow, challenge loop, scoring, replay prompt)
+- `game_common.py` - Shared helpers (difficulty parsing, counts, true/false input normalization, T/F statement picking)
+- `code_validators.py` - Shared code-answer validation profiles (`default`, `vector`, `matrix`)
+- `array_blitz.py`, `vector_battle.py`, `matrix_challenge.py`, `ufunc_arena.py` - Game-specific challenge generators and sequence building
+- `verify_phase0_smoke.py` - Regression/smoke guard
 
-## Implementation Status
+## Notes
 
-Each game is a skeleton with:
-- ✅ Project structure
-- ✅ Game concept and flow
-- ✅ TODO comments for implementation
-- ⏳ Implementation guide
-- ⏳ Game logic
-- ⏳ User interaction
-
-## Next Steps
-
-1. Read `IMPLEMENTATION_GUIDE.md` for detailed instructions
-2. Start with `array_blitz.py` (simplest)
-3. Implement one game at a time
-4. Test each feature as you build it
-
-Happy coding! 🎮📊
+- Type-checker warnings about unresolved `numpy` usually mean your IDE interpreter differs from the environment where NumPy is installed.
 

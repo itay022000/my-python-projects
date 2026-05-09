@@ -1,5 +1,8 @@
 import numpy as np
 import random
+from code_validators import validate_code_answer as shared_validate_code_answer
+from engine import run_game_session, run_with_replay
+from game_common import pick_true_false_statement
 
 """
 Vector Battle - Master NumPy random operations and permutations
@@ -26,8 +29,8 @@ def generate_permutation_challenge(difficulty="easy"):
             question = f"Write the code to randomly permute integers from 0 to {size-1}"
             answer = f"np.random.permutation({size})"
         else:  # property
-            question = "What function randomly rearranges an array and returns a new array (doesn't modify original)?\nWrite the function name"
-            answer = "np.random.permutation"
+            question = "What function randomly rearranges an array and returns a new array (doesn't modify original)?\nWrite permutation/shuffle only"
+            answer = "permutation"
         hint = "What function randomly rearranges elements and returns a new array?"
     elif difficulty == "medium":
         if question_type == "create":
@@ -39,8 +42,8 @@ def generate_permutation_challenge(difficulty="easy"):
             question = f"Write the code to create a random arrangement of numbers 0 through {size-1}"
             answer = f"np.random.permutation({size})"
         else:  # property
-            question = "Which NumPy function creates a new randomly ordered array from an existing one?\nWrite the function name"
-            answer = "np.random.permutation"
+            question = "Which NumPy function creates a new randomly ordered array from an existing one?\nWrite permutation/shuffle only"
+            answer = "permutation"
         hint = "permutation can take an integer to permute a range"
     else:  # hard
         question_type = random.choice(["create", "range", "property", "2d", "copy", "scenario"])
@@ -64,7 +67,7 @@ def generate_permutation_challenge(difficulty="easy"):
             question = f"Given: array = {array}\nYou need a shuffled version but must preserve the original. Write the code"
             answer = "np.random.permutation(array)"
         else:  # scenario
-            question = "You have an array and need to create multiple independent shuffled versions. Which function should you use?\nWrite the function name (permutation or shuffle)"
+            question = "You have an array and need to create multiple independent shuffled versions. Which function should you use?\nWrite permutation/shuffle only"
             answer = "permutation"
         hint = "permutation returns a new array, it doesn't modify the original"
     
@@ -81,8 +84,8 @@ def generate_shuffle_challenge(difficulty="easy"):
             question = f"Given: array = {array}\nWrite the code to randomly reorder this array (modifies it directly)"
             answer = "np.random.shuffle(array)"
         elif question_type == "property":
-            question = "What function randomly rearranges an array and modifies the original?\nWrite the function name"
-            answer = "np.random.shuffle"
+            question = "What function randomly rearranges an array and modifies the original?\nWrite permutation/shuffle only"
+            answer = "shuffle"
         else:  # modify
             array = np.random.randint(0, 10, size=random.randint(5, 8))
             question = f"Given: array = {array}\nWrite the code to change the order of elements in-place"
@@ -108,8 +111,8 @@ def generate_shuffle_challenge(difficulty="easy"):
             question = f"Given: array = \n{array}\nWrite the code to shuffle rows (modifies original)"
             answer = "np.random.shuffle(array)"
         elif question_type == "property":
-            question = "Which function modifies arrays in-place and returns None?\nWrite the function name"
-            answer = "np.random.shuffle"
+            question = "Which function modifies arrays in-place and returns None?\nWrite permutation/shuffle only"
+            answer = "shuffle"
         elif question_type == "modify":
             array = np.random.randint(0, 30, size=random.randint(10, 15))
             question = f"Given: array = {array}\nWrite the code to randomly reorder elements (destructive operation)"
@@ -122,7 +125,7 @@ def generate_shuffle_challenge(difficulty="easy"):
             question = "You want to shuffle a large array without creating a copy to save memory. Write the code"
             answer = "np.random.shuffle(array)"
         else:  # scenario
-            question = "You need to shuffle an array and don't need the original order. Which function is more memory-efficient?\nWrite the function name (permutation or shuffle)"
+            question = "You need to shuffle an array and don't need the original order. Which function is more memory-efficient?\nWrite permutation/shuffle only"
             answer = "shuffle"
         hint = "shuffle works along the first axis by default for 2D arrays"
     
@@ -237,8 +240,8 @@ def generate_choice_challenge(difficulty="easy"):
         elif question_type == "multiple":
             array = np.random.randint(0, 10, size=random.randint(5, 8))
             size = random.randint(2, 3)
-            question = f"Given: array = {array}\nWrite the code to randomly select {size} elements"
-            answer = f"np.random.choice(array, size={size})"
+            question = f"Given: array = {array}\nWrite the code to randomly select {size} elements (with replacement)"
+            answer = f"np.random.choice(array, size={size}, replace=True)"
         elif question_type == "replace":
             array = np.array([1, 2, 3, 4, 5])
             question = f"Given: array = {array}\nWrite the code to randomly pick one element (can repeat)"
@@ -257,7 +260,7 @@ def generate_choice_challenge(difficulty="easy"):
             array = np.random.randint(0, 20, size=random.randint(5, 10))
             size = random.randint(2, 4)
             question = f"Given: array = {array}\nWrite the code to randomly select {size} elements (with replacement)"
-            answer = f"np.random.choice(array, size={size})"
+            answer = f"np.random.choice(array, size={size}, replace=True)"
         elif question_type == "replace":
             array = np.random.randint(0, 15, size=random.randint(6, 10))
             size = random.randint(3, 5)
@@ -266,8 +269,8 @@ def generate_choice_challenge(difficulty="easy"):
         else:  # weights
             array = np.random.randint(0, 20, size=random.randint(5, 8))
             size = random.randint(2, 3)
-            question = f"Given: array = {array}\nWrite the code to randomly select {size} elements"
-            answer = f"np.random.choice(array, size={size})"
+            question = f"Given: array = {array}\nWrite the code to randomly select {size} elements (with replacement)"
+            answer = f"np.random.choice(array, size={size}, replace=True)"
         hint = "You can select multiple elements by specifying size"
     else:  # hard
         question_type = random.choice(["single", "multiple", "replace", "weights", "large", "unique", "scenario"])
@@ -278,8 +281,8 @@ def generate_choice_challenge(difficulty="easy"):
         elif question_type == "multiple":
             array = np.random.randint(0, 50, size=random.randint(8, 15))
             size = random.randint(3, 6)
-            question = f"Given: array = {array}\nWrite the code to randomly select {size} elements"
-            answer = f"np.random.choice(array, size={size})"
+            question = f"Given: array = {array}\nWrite the code to randomly select {size} elements (with replacement)"
+            answer = f"np.random.choice(array, size={size}, replace=True)"
         elif question_type == "replace":
             array = np.random.randint(0, 50, size=random.randint(8, 15))
             size = random.randint(3, 6)
@@ -295,7 +298,7 @@ def generate_choice_challenge(difficulty="easy"):
             array = np.random.randint(0, 100, size=random.randint(15, 25))
             size = random.randint(5, 10)
             question = f"Given: array = {array}\nWrite the code to randomly select {size} elements (with replacement)"
-            answer = f"np.random.choice(array, size={size})"
+            answer = f"np.random.choice(array, size={size}, replace=True)"
         elif question_type == "unique":
             array = np.random.randint(0, 50, size=random.randint(10, 15))
             size = random.randint(4, 7)
@@ -319,10 +322,10 @@ def generate_comparison_challenge(difficulty="easy"):
     if difficulty == "easy":
         if question_type == "difference":
             if random.choice([True, False]):
-                question = "Which function returns a new array instead of modifying the original?\nWrite the function name (permutation or shuffle)"
+                question = "Which function returns a new array instead of modifying the original?\nWrite permutation/shuffle only"
                 answer = "permutation"
             else:
-                question = "Which function modifies the array in-place (changes the original)?\nWrite the function name (permutation or shuffle)"
+                question = "Which function modifies the array in-place (changes the original)?\nWrite permutation/shuffle only"
                 answer = "shuffle"
             hint = "One returns a new array, the other modifies the original"
         elif question_type == "use_case":
@@ -335,7 +338,7 @@ def generate_comparison_challenge(difficulty="easy"):
             answer = "none"
             hint = "shuffle modifies the array directly and returns None"
         else:  # property
-            question = "Which function creates a new randomly ordered array?\nWrite the function name (permutation or shuffle)"
+            question = "Which function creates a new randomly ordered array?\nWrite permutation/shuffle only"
             answer = "permutation"
             hint = "One returns a new array, the other modifies the original"
     elif difficulty == "medium":
@@ -393,11 +396,11 @@ def generate_comparison_challenge(difficulty="easy"):
             answer = "np.random.permutation(array)"
             hint = "permutation returns a new array, it doesn't modify the original"
         elif question_type == "memory":
-            question = "Which function is better for memory-constrained environments when shuffling large arrays?\nWrite the function name (permutation or shuffle)"
+            question = "Which function is better for memory-constrained environments when shuffling large arrays?\nWrite permutation/shuffle only"
             answer = "shuffle"
             hint = "In-place operations don't create copies"
         elif question_type == "chain":
-            question = "You want to chain operations: shuffled = shuffle(array) and then use shuffled. Which function allows this?\nWrite the function name (permutation or shuffle)"
+            question = "You want to chain operations: shuffled = shuffle(array) and then use shuffled. Which function allows this?\nWrite permutation/shuffle only"
             answer = "permutation"
             hint = "You need a function that returns a value to chain operations"
         else:  # error
@@ -421,7 +424,10 @@ def generate_random_array_challenge(difficulty="easy"):
             size = random.randint(5, 8)
             low = random.randint(1, 5)
             high = random.randint(6, 10)
-            question = f"Write the code to generate {size} random floats between {low} and {high}"
+            question = (
+                f"Write the code to generate {size} random floats between {low} and {high}\n"
+                "Include the bounds stated above in your solution."
+            )
             answer = f"np.random.uniform({low}, {high}, size={size})"
         else:  # seed
             question = "Write the code to set the random seed to 42 for reproducibility"
@@ -436,7 +442,10 @@ def generate_random_array_challenge(difficulty="easy"):
             shape = (random.randint(3, 5), random.randint(3, 5))
             low = random.randint(0, 5)
             high = random.randint(6, 15)
-            question = f"Write the code to generate a 2D array with shape {shape} of random floats between {low} and {high}"
+            question = (
+                f"Write the code to generate a 2D array with shape {shape} of random floats between {low} and {high}\n"
+                "Include the bounds stated above in your solution."
+            )
             answer = f"np.random.uniform({low}, {high}, size={shape})"
         else:  # seed
             seed = random.randint(0, 100)
@@ -452,7 +461,10 @@ def generate_random_array_challenge(difficulty="easy"):
             low = random.randint(1, 10)
             high = random.randint(11, 30)
             shape = (random.randint(3, 5), random.randint(3, 5))
-            question = f"Write the code to generate a 2D array with shape {shape} of random floats between {low} and {high}"
+            question = (
+                f"Write the code to generate a 2D array with shape {shape} of random floats between {low} and {high}\n"
+                "Include the bounds stated above in your solution."
+            )
             answer = f"np.random.uniform({low}, {high}, size={shape})"
         else:  # seed
             seed = random.randint(0, 1000)
@@ -463,123 +475,54 @@ def generate_random_array_challenge(difficulty="easy"):
     return {"type": "random_array", "question": question, "answer": answer, "hint": hint}
 
 
-def generate_true_false_challenge(difficulty="easy"):
-    """Generate true/false questions about random operations"""
-    question_type = random.choice([
-        "permutation", "shuffle", "choice", "randint", "random", 
-        "seed", "comparison", "return", "inplace", "distribution"
-    ])
-    
-    if difficulty == "easy":
-        if question_type == "permutation":
-            question = "True or False: np.random.permutation(array) returns a new array without modifying the original."
-            answer = "true"
-        elif question_type == "shuffle":
-            question = "True or False: np.random.shuffle(array) modifies the array in-place and returns None."
-            answer = "true"
-        elif question_type == "choice":
-            question = "True or False: np.random.choice(array) randomly selects one element from the array."
-            answer = "true"
-        elif question_type == "randint":
-            question = "True or False: np.random.randint(0, 10) generates a random integer from 0 to 10 (inclusive)."
-            answer = "false"
-        else:  # random
-            question = "True or False: np.random.random(5) generates 5 random floats between 0 and 1."
-            answer = "true"
-        hint = "Think about how NumPy random functions work"
-    elif difficulty == "medium":
-        if question_type == "permutation":
-            question = "True or False: np.random.permutation(10) creates a random permutation of integers 0-9."
-            answer = "true"
-        elif question_type == "shuffle":
-            question = "True or False: You can assign the result of np.random.shuffle(array) to a variable."
-            answer = "false"
-        elif question_type == "choice":
-            question = "True or False: np.random.choice(array, size=3) selects 3 elements with replacement by default."
-            answer = "true"
-        elif question_type == "randint":
-            question = "True or False: np.random.randint(5, 15, size=(3, 4)) creates a 3x4 array of random integers."
-            answer = "true"
-        elif question_type == "random":
-            question = "True or False: np.random.random((2, 3)) generates a 2D array with shape (2, 3)."
-            answer = "true"
-        elif question_type == "seed":
-            question = "True or False: Setting the same seed value guarantees the same random sequence."
-            answer = "true"
-        elif question_type == "comparison":
-            question = "True or False: permutation() and shuffle() produce the same result but work differently."
-            answer = "true"
-        elif question_type == "return":
-            question = "True or False: Both permutation() and shuffle() return a new array."
-            answer = "false"
-        else:  # distribution
-            question = "True or False: np.random.randint(0, 10) can generate the value 10."
-            answer = "false"
-        hint = "Consider the behavior and return values of random functions"
-    else:  # hard
-        if question_type == "permutation":
-            question = "True or False: np.random.permutation() can work with multi-dimensional arrays."
-            answer = "true"
-        elif question_type == "shuffle":
-            question = "True or False: np.random.shuffle() works along the first axis for 2D arrays."
-            answer = "true"
-        elif question_type == "choice":
-            question = "True or False: np.random.choice(array, size=5, replace=False) requires the array to have at least 5 elements."
-            answer = "true"
-        elif question_type == "randint":
-            question = "True or False: np.random.randint(-10, 10) can generate negative integers."
-            answer = "true"
-        elif question_type == "random":
-            question = "True or False: np.random.random() generates values in the range [0, 1) (0 inclusive, 1 exclusive)."
-            answer = "true"
-        elif question_type == "seed":
-            question = "True or False: Setting a seed only affects the next random operation, not subsequent ones."
-            answer = "false"
-        elif question_type == "comparison":
-            question = "True or False: For memory efficiency with large arrays, shuffle() is better than permutation()."
-            answer = "true"
-        elif question_type == "return":
-            question = "True or False: permutation() always returns a copy, never a view."
-            answer = "true"
-        elif question_type == "inplace":
-            question = "True or False: shuffle() is an in-place operation that modifies the original array."
-            answer = "true"
-        else:  # distribution
-            question = "True or False: np.random.uniform(1, 10, size=5) generates 5 floats between 1 and 10 (inclusive)."
-            answer = "true"
-        hint = "Advanced random operations require understanding memory and behavior"
-    
+def generate_true_false_challenge(difficulty="easy", *, used_questions=None):
+    """Generate true/false questions about random operations."""
+    statements_by_difficulty = {
+        "easy": [
+            ("True or False: np.random.permutation(array) returns a new array without modifying the original.", "true"),
+            ("True or False: np.random.shuffle(array) modifies the array in-place and returns None.", "true"),
+            ("True or False: np.random.choice(array) randomly selects one element from the array.", "true"),
+            ("True or False: np.random.randint(0, 10) generates a random integer from 0 to 10 (inclusive).", "false"),
+            ("True or False: np.random.random(5) generates 5 random floats between 0 and 1.", "true"),
+        ],
+        "medium": [
+            ("True or False: np.random.permutation(10) creates a random permutation of integers 0-9.", "true"),
+            ("True or False: You can assign the result of np.random.shuffle(array) to a variable.", "false"),
+            ("True or False: np.random.choice(array, size=3) selects 3 elements with replacement by default.", "true"),
+            ("True or False: np.random.randint(5, 15, size=(3, 4)) creates a 3x4 array of random integers.", "true"),
+            ("True or False: np.random.random((2, 3)) generates a 2D array with shape (2, 3).", "true"),
+            ("True or False: Setting the same seed value guarantees the same random sequence.", "true"),
+            ("True or False: permutation() and shuffle() produce the same result but work differently.", "true"),
+            ("True or False: Both permutation() and shuffle() return a new array.", "false"),
+            ("True or False: np.random.randint(0, 10) can generate the value 10.", "false"),
+        ],
+        "hard": [
+            ("True or False: np.random.permutation() can work with multi-dimensional arrays.", "true"),
+            ("True or False: np.random.shuffle() works along the first axis for 2D arrays.", "true"),
+            ("True or False: np.random.choice(array, size=5, replace=False) requires the array to have at least 5 elements.", "true"),
+            ("True or False: np.random.randint(-10, 10) can generate negative integers.", "true"),
+            ("True or False: np.random.random() generates values in the range [0, 1) (0 inclusive, 1 exclusive).", "true"),
+            ("True or False: Setting a seed only affects the next random operation, not subsequent ones.", "false"),
+            ("True or False: For memory efficiency with large arrays, shuffle() is better than permutation().", "true"),
+            ("True or False: permutation() always returns a copy, never a view.", "true"),
+            ("True or False: shuffle() is an in-place operation that modifies the original array.", "true"),
+            ("True or False: np.random.uniform(1, 10, size=5) generates 5 floats between 1 and 10 (inclusive).", "true"),
+        ],
+    }
+    hints_by_difficulty = {
+        "easy": "Think about how NumPy random functions work",
+        "medium": "Consider the behavior and return values of random functions",
+        "hard": "Advanced random operations require understanding memory and behavior",
+    }
+    question, answer, hint = pick_true_false_statement(
+        difficulty, statements_by_difficulty, hints_by_difficulty, used_questions=used_questions
+    )
     return {"type": "true_false", "question": question, "answer": answer, "hint": hint}
 
 
 def validate_code_answer(user_input, correct_answer):
-    """
-    Validate user's code answer.
-    Normalizes whitespace and handles variations in code formatting.
-    Also handles function names and simple string answers.
-    """
-    def normalize_code(code):
-        # Remove all whitespace
-        code = ''.join(code.split())
-        # Convert to lowercase for case-insensitive comparison
-        return code.lower()
-    
-    user_normalized = normalize_code(user_input)
-    correct_normalized = normalize_code(correct_answer)
-    
-    # Handle simple string answers (e.g., "permutation", "shuffle", "none", "array")
-    if correct_normalized in ["permutation", "shuffle", "none", "array"]:
-        # Direct match
-        if user_normalized == correct_normalized:
-            return True
-        # For function names, also accept full path
-        if correct_normalized in ["permutation", "shuffle"]:
-            if user_normalized == f"np.random.{correct_normalized}" or user_normalized.endswith(f".{correct_normalized}"):
-                return True
-        return False
-    
-    # For code answers, do exact normalized comparison
-    return user_normalized == correct_normalized
+    """Validate user's code answer using shared vector profile."""
+    return shared_validate_code_answer(user_input, correct_answer, profile="vector")
 
 
 def show_hint(challenge):
@@ -588,152 +531,40 @@ def show_hint(challenge):
 
 
 def play_game():
-    """
-    Run a single game session.
-    """
-    print("Welcome to Vector Battle!")
-    print("Master NumPy random operations and permutations!\n")
-    
-    # Difficulty selection
-    while True:
-        difficulty = input("Select difficulty (easy/medium/hard or 1/2/3): ").strip().lower()
-        # Map numeric shortcuts to difficulty levels
-        if difficulty == "1":
-            difficulty = "easy"
-        elif difficulty == "2":
-            difficulty = "medium"
-        elif difficulty == "3":
-            difficulty = "hard"
-        if difficulty in ["easy", "medium", "hard"]:
-            break
-        print("Invalid choice. Please enter 'easy', 'medium', 'hard', or '1', '2', '3'.")
-    
-    print(f"\nYou selected {difficulty.upper()} difficulty. Good luck!")
-    print("(Tip: Type 'exit' at any time to quit the current round)\n")
-    
-    # Set number of challenges based on difficulty
-    if difficulty == "easy":
-        total_challenges = 6  # 5 code + 1 T/F
-    elif difficulty == "medium":
-        total_challenges = 13  # 10 code + 3 T/F
-    else:  # hard
-        total_challenges = 20  # 15 code + 5 T/F
-    
-    # Initialize score tracking
-    score = 0
-    
-    # Determine number of T/F questions
-    if difficulty == "easy":
-        tf_count = 1
-        code_count = 5
-    elif difficulty == "medium":
-        tf_count = 3
-        code_count = 10
-    else:  # hard
-        tf_count = 5
-        code_count = 15
-    
-    # Challenge functions
+    """Run a single game session."""
+
     challenge_functions = [
         generate_permutation_challenge,
         generate_shuffle_challenge,
         generate_distribution_challenge,
         generate_choice_challenge,
         generate_comparison_challenge,
-        generate_random_array_challenge
+        generate_random_array_challenge,
     ]
-    
-    # Create challenge sequence with diversity
-    challenge_sequence = []
-    for _ in range(code_count):
-        challenge_sequence.append(random.choice(challenge_functions))
-    
-    # Add T/F questions
-    for _ in range(tf_count):
-        challenge_sequence.append(generate_true_false_challenge)
-    
-    # Shuffle to randomize order
-    random.shuffle(challenge_sequence)
-    
-    # Game loop
-    for i in range(total_challenges):
-        print(f"--- Challenge {i + 1} of {total_challenges} ---")
-        
-        # Get challenge function from sequence
-        challenge_func = challenge_sequence[i]
-        challenge = challenge_func(difficulty)
-        
-        # Display question
-        print(f"\n{challenge['question']}\n")
-        
-        # Get user input - check if it's a T/F question
-        if challenge['type'] == 'true_false':
-            user_answer = input("Your answer (true/false or t/f): ").strip().lower()
-            # Check for exit command
-            if user_answer == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize T/F answers
-            if user_answer in ['t', 'true']:
-                user_answer = 'true'
-            elif user_answer in ['f', 'false']:
-                user_answer = 'false'
-            is_correct = user_answer == challenge['answer']
-        else:
-            user_answer = input("Your answer (write the code): ").strip()
-            # Check for exit command
-            if user_answer.lower() == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize spaces before validation
-            is_correct = validate_code_answer(user_answer, challenge['answer'])
-        
-        # Update score and show feedback
-        if is_correct:
-            print("✓ Correct! Well done!")
-            score += 1
-        else:
-            print(f"✗ Incorrect. The correct answer is: {challenge['answer']}")
-            show_hint(challenge)
-        
-        print(f"Current score: {score}/{i + 1}\n")
-    
-    # Final statistics
-    percentage = (score / total_challenges) * 100
-    print("=" * 50)
-    print(f"Final Score: {score} out of {total_challenges}")
-    print(f"Percentage: {percentage:.1f}%")
-    
-    if percentage == 100:
-        print("Perfect score! You're a random operations master! 🎉")
-    elif percentage >= 80:
-        print("Excellent work! You're getting really good! 🌟")
-    elif percentage >= 60:
-        print("Good job! Keep practicing! 👍")
-    else:
-        print("Keep practicing! You'll get better! 💪")
-    
-    print("\nThank you for playing Vector Battle!")
+
+    def build_sequence(_difficulty, code_count, tf_count, used_questions):
+        challenge_sequence = [random.choice(challenge_functions) for _ in range(code_count)]
+        for _ in range(tf_count):
+            challenge_sequence.append(
+                lambda d, u=used_questions: generate_true_false_challenge(d, used_questions=u)
+            )
+        random.shuffle(challenge_sequence)
+        return challenge_sequence
+
+    run_game_session(
+        game_name="Vector Battle",
+        subtitle="Master NumPy random operations and permutations!",
+        perfect_message="Perfect score! You're a random operations master! 🎉",
+        thank_you_message="Thank you for playing Vector Battle!",
+        code_validator=validate_code_answer,
+        sequence_builder=build_sequence,
+        show_hint=show_hint,
+    )
 
 
 def main():
-    """
-    Main game loop with play again option.
-    """
-    while True:
-        play_game()
-        
-        # Ask if user wants to play again
-        while True:
-            play_again = input("\nWould you like to play again? (yes/no): ").strip().lower()
-            if play_again in ["yes", "y", "no", "n"]:
-                break
-            print("Invalid choice. Please enter 'yes' or 'no'.")
-        
-        if play_again in ["no", "n"]:
-            print("\nWe'll talk later! 👋")
-            break
-        print("\n" + "=" * 50 + "\n")
+    """Main game loop with play-again prompt."""
+    run_with_replay(play_game)
 
 
 if __name__ == "__main__":

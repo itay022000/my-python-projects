@@ -1,5 +1,8 @@
 import numpy as np
 import random
+from code_validators import validate_code_answer as shared_validate_code_answer
+from engine import run_game_session, run_with_replay
+from game_common import pick_true_false_statement
 
 """
 Matrix Challenge - Solve matrix operations and transformations
@@ -249,7 +252,7 @@ def generate_transpose_challenge(difficulty="easy"):
             rows = random.randint(2, 4)
             cols = random.randint(2, 4)
             matrix = np.random.randint(0, 10, size=(rows, cols))
-            question = f"Given: matrix = \n{matrix}\nWrite the code to transpose it using the .T attribute"
+            question = f"Given: matrix = \n{matrix}\nWrite the code to transpose it"
             answer = "matrix.T"
         else:  # property
             rows = random.randint(2, 4)
@@ -268,7 +271,7 @@ def generate_transpose_challenge(difficulty="easy"):
             rows = random.randint(3, 5)
             cols = random.randint(3, 5)
             matrix = np.random.randint(0, 20, size=(rows, cols))
-            question = f"Given: matrix = \n{matrix}\nWrite the code to transpose it using the .T attribute"
+            question = f"Given: matrix = \n{matrix}\nWrite the code to transpose it"
             answer = "matrix.T"
         else:  # property
             rows = random.randint(3, 6)
@@ -287,7 +290,7 @@ def generate_transpose_challenge(difficulty="easy"):
             rows = random.randint(4, 7)
             cols = random.randint(4, 7)
             matrix = np.random.randint(0, 50, size=(rows, cols))
-            question = f"Given: matrix = \n{matrix}\nWrite the code to transpose it using the .T attribute"
+            question = f"Given: matrix = \n{matrix}\nWrite the code to transpose it"
             answer = "matrix.T"
         else:  # property
             rows = random.randint(4, 8)
@@ -513,130 +516,60 @@ def generate_matrix_properties_challenge(difficulty="easy"):
     return {"type": "matrix_properties", "question": question, "answer": answer, "hint": hint}
 
 
-def generate_true_false_challenge(difficulty="easy"):
-    """Generate true/false questions about matrix operations"""
-    question_type = random.choice([
-        "creation", "math", "transpose", "shape", "reshape",
-        "properties", "dot", "elementwise", "broadcasting", "identity"
-    ])
-    
-    if difficulty == "easy":
-        if question_type == "creation":
-            question = "True or False: np.zeros((3, 4)) creates a 3x4 matrix filled with zeros."
-            answer = "true"
-        elif question_type == "math":
-            question = "True or False: Matrix addition requires both matrices to have the same shape."
-            answer = "true"
-        elif question_type == "transpose":
-            question = "True or False: Transposing a (3, 4) matrix gives a (4, 3) matrix."
-            answer = "true"
-        elif question_type == "shape":
-            question = "True or False: matrix.shape returns a tuple (rows, cols)."
-            answer = "true"
-        else:  # reshape
-            question = "True or False: You can reshape a (2, 6) matrix to (3, 4) because both have 12 elements."
-            answer = "true"
-        hint = "Think about matrix properties and operations"
-    elif difficulty == "medium":
-        if question_type == "creation":
-            question = "True or False: np.eye(5) creates a 5x5 identity matrix."
-            answer = "true"
-        elif question_type == "math":
-            question = "True or False: np.multiply(a, b) performs element-wise multiplication, not matrix multiplication."
-            answer = "true"
-        elif question_type == "transpose":
-            question = "True or False: matrix.T and np.transpose(matrix) are equivalent for 2D arrays."
-            answer = "true"
-        elif question_type == "shape":
-            question = "True or False: matrix.size returns the total number of elements (rows * cols)."
-            answer = "true"
-        elif question_type == "reshape":
-            question = "True or False: reshape() requires the total number of elements to remain the same."
-            answer = "true"
-        elif question_type == "properties":
-            question = "True or False: A symmetric matrix equals its transpose."
-            answer = "true"
-        elif question_type == "dot":
-            question = "True or False: For np.dot(a, b) to work, the number of columns in a must equal the number of rows in b."
-            answer = "true"
-        elif question_type == "elementwise":
-            question = "True or False: Element-wise operations require matrices to have the same shape."
-            answer = "true"
-        else:  # identity
-            question = "True or False: An identity matrix has 1s on the diagonal and 0s elsewhere."
-            answer = "true"
-        hint = "Consider matrix operation requirements and properties"
-    else:  # hard
-        if question_type == "creation":
-            question = "True or False: np.full((3, 4), 5) creates a 3x4 matrix filled with 5s."
-            answer = "true"
-        elif question_type == "math":
-            question = "True or False: np.dot(a, b) performs matrix multiplication (not element-wise)."
-            answer = "true"
-        elif question_type == "transpose":
-            question = "True or False: Transposing twice returns the original matrix."
-            answer = "true"
-        elif question_type == "shape":
-            question = "True or False: matrix.ndim returns the number of dimensions (2 for a matrix)."
-            answer = "true"
-        elif question_type == "reshape":
-            question = "True or False: You can use -1 in reshape to automatically calculate one dimension."
-            answer = "true"
-        elif question_type == "properties":
-            question = "True or False: np.array_equal(matrix, matrix.T) checks if a matrix is symmetric."
-            answer = "true"
-        elif question_type == "dot":
-            question = "True or False: Matrix multiplication is not commutative (A @ B ≠ B @ A in general)."
-            answer = "true"
-        elif question_type == "elementwise":
-            question = "True or False: Element-wise multiplication with * is different from matrix multiplication with @."
-            answer = "true"
-        elif question_type == "broadcasting":
-            question = "True or False: NumPy can broadcast a scalar to multiply with a matrix element-wise."
-            answer = "true"
-        else:  # identity
-            question = "True or False: Multiplying any matrix by an identity matrix of compatible size returns the original matrix."
-            answer = "true"
-        hint = "Advanced matrix operations involve understanding linear algebra concepts"
-    
+def generate_true_false_challenge(difficulty="easy", *, used_questions=None):
+    """Generate true/false questions about matrix operations."""
+    statements_by_difficulty = {
+        "easy": [
+            ("True or False: np.zeros((3, 4)) creates a 3x4 matrix filled with zeros.", "true"),
+            ("True or False: Matrix addition requires both matrices to have the same shape.", "true"),
+            ("True or False: Transposing a (3, 4) matrix gives a (4, 3) matrix.", "true"),
+            ("True or False: matrix.shape returns a tuple (rows, cols).", "true"),
+            ("True or False: You can reshape a (2, 6) matrix to (3, 4) because both have 12 elements.", "true"),
+            ("True or False: np.ones((2, 3)) contains exactly 5 elements.", "false"),
+            ("True or False: Transposing a matrix removes one row from the data.", "false"),
+        ],
+        "medium": [
+            ("True or False: np.eye(5) creates a 5x5 identity matrix.", "true"),
+            ("True or False: np.multiply(a, b) performs element-wise multiplication, not matrix multiplication.", "true"),
+            ("True or False: matrix.T and np.transpose(matrix) are equivalent for 2D arrays.", "true"),
+            ("True or False: matrix.size returns the total number of elements (rows * cols).", "true"),
+            ("True or False: reshape() requires the total number of elements to remain the same.", "true"),
+            ("True or False: A symmetric matrix equals its transpose.", "true"),
+            ("True or False: For np.dot(a, b) to work, the number of columns in a must equal the number of rows in b.", "true"),
+            ("True or False: Element-wise operations require matrices to have the same shape.", "true"),
+            ("True or False: An identity matrix has 1s on the diagonal and 0s elsewhere.", "true"),
+            ("True or False: For 2D matrices a and b, np.dot(a, b) gives the same result as a * b.", "false"),
+            ("True or False: reshape() can change a matrix so it has a different total number of elements.", "false"),
+        ],
+        "hard": [
+            ("True or False: np.full((3, 4), 5) creates a 3x4 matrix filled with 5s.", "true"),
+            ("True or False: np.dot(a, b) performs matrix multiplication (not element-wise).", "true"),
+            ("True or False: Transposing twice returns the original matrix.", "true"),
+            ("True or False: matrix.ndim returns the number of dimensions (2 for a matrix).", "true"),
+            ("True or False: You can use -1 in reshape to automatically calculate one dimension.", "true"),
+            ("True or False: np.array_equal(matrix, matrix.T) checks if a matrix is symmetric.", "true"),
+            ("True or False: Matrix multiplication is not commutative (A @ B ≠ B @ A in general).", "true"),
+            ("True or False: Element-wise multiplication with * is different from matrix multiplication with @.", "true"),
+            ("True or False: NumPy can broadcast a scalar to multiply with a matrix element-wise.", "true"),
+            ("True or False: Multiplying any matrix by an identity matrix of compatible size returns the original matrix.", "true"),
+            ("True or False: matrix.flatten() always returns a view sharing memory with the original matrix.", "false"),
+            ("True or False: For any two square matrices A and B of the same shape, A @ B always equals B @ A.", "false"),
+        ],
+    }
+    hints_by_difficulty = {
+        "easy": "Think about matrix properties and operations",
+        "medium": "Consider matrix operation requirements and properties",
+        "hard": "Advanced matrix operations involve understanding linear algebra concepts",
+    }
+    question, answer, hint = pick_true_false_statement(
+        difficulty, statements_by_difficulty, hints_by_difficulty, used_questions=used_questions
+    )
     return {"type": "true_false", "question": question, "answer": answer, "hint": hint}
 
 
 def validate_code_answer(user_input, correct_answer):
-    """
-    Validate user's code answer.
-    Normalizes whitespace and handles variations in code formatting.
-    """
-    def normalize_code(code):
-        # Remove all whitespace
-        code = ''.join(code.split())
-        # Convert to lowercase for case-insensitive comparison
-        return code.lower()
-    
-    user_normalized = normalize_code(user_input)
-    correct_normalized = normalize_code(correct_answer)
-    
-    # Handle tuple answers (for shape questions)
-    if correct_normalized.startswith('(') and correct_normalized.endswith(')'):
-        # Remove parentheses and normalize spaces
-        correct_clean = correct_normalized.strip('()').replace(' ', '')
-        user_clean = user_normalized.strip('()').replace(' ', '')
-        return user_clean == correct_clean
-    
-    # Handle transpose equivalence: matrix.T and np.transpose(matrix) are equivalent
-    # Check if correct answer is a transpose operation
-    correct_is_transpose_t = correct_normalized == "matrix.t" or correct_normalized.endswith(".t")
-    correct_is_transpose_func = "nptranspose(matrix)" in correct_normalized or "transpose(matrix)" in correct_normalized
-    
-    # Check if user answer is a transpose operation
-    user_is_transpose_t = user_normalized == "matrix.t" or user_normalized.endswith(".t")
-    user_is_transpose_func = "nptranspose(matrix)" in user_normalized or "transpose(matrix)" in user_normalized
-    
-    # If both are transpose operations (either form), accept it
-    if (correct_is_transpose_t or correct_is_transpose_func) and (user_is_transpose_t or user_is_transpose_func):
-        return True
-    
-    return user_normalized == correct_normalized
+    """Validate user's code answer using shared matrix profile."""
+    return shared_validate_code_answer(user_input, correct_answer, profile="matrix")
 
 
 def show_hint(challenge):
@@ -645,137 +578,40 @@ def show_hint(challenge):
 
 
 def play_game():
-    """
-    Run a single game session.
-    """
-    print("Welcome to Matrix Challenge!")
-    print("Master NumPy matrix operations!\n")
-    
-    # Difficulty selection
-    while True:
-        difficulty = input("Select difficulty (easy/medium/hard or 1/2/3): ").strip().lower()
-        # Map numeric shortcuts to difficulty levels
-        if difficulty == "1":
-            difficulty = "easy"
-        elif difficulty == "2":
-            difficulty = "medium"
-        elif difficulty == "3":
-            difficulty = "hard"
-        if difficulty in ["easy", "medium", "hard"]:
-            break
-        print("Invalid choice. Please enter 'easy', 'medium', 'hard', or '1', '2', '3'.")
-    
-    print(f"\nYou selected {difficulty.upper()} difficulty. Good luck!")
-    print("(Tip: Type 'exit' at any time to quit the current round)\n")
-    
-    # Set number of challenges based on difficulty
-    if difficulty == "easy":
-        total_challenges = 6  # 5 code + 1 T/F
-    elif difficulty == "medium":
-        total_challenges = 13  # 10 code + 3 T/F
-    else:  # hard
-        total_challenges = 20  # 15 code + 5 T/F
-    
-    # Initialize score tracking
-    score = 0
-    
-    # Challenge functions
+    """Run a single game session."""
+
     challenge_functions = [
         generate_create_matrix_challenge,
         generate_matrix_math_challenge,
         generate_transpose_challenge,
         generate_matrix_shape_challenge,
         generate_reshape_matrix_challenge,
-        generate_matrix_properties_challenge
+        generate_matrix_properties_challenge,
     ]
-    
-    # Create challenge sequence with diversity
-    challenge_sequence = []
-    for _ in range(total_challenges):
-        challenge_sequence.append(random.choice(challenge_functions))
-    
-    # Shuffle to randomize order
-    random.shuffle(challenge_sequence)
-    
-    # Game loop
-    for i in range(total_challenges):
-        print(f"--- Challenge {i + 1} of {total_challenges} ---")
-        
-        # Get challenge function from sequence
-        challenge_func = challenge_sequence[i]
-        challenge = challenge_func(difficulty)
-        
-        # Display question
-        print(f"\n{challenge['question']}\n")
-        
-        # Get user input - check if it's a T/F question
-        if challenge['type'] == 'true_false':
-            user_answer = input("Your answer (true/false or t/f): ").strip().lower()
-            # Check for exit command
-            if user_answer == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize T/F answers
-            if user_answer in ['t', 'true']:
-                user_answer = 'true'
-            elif user_answer in ['f', 'false']:
-                user_answer = 'false'
-            is_correct = user_answer == challenge['answer']
-        else:
-            user_answer = input("Your answer (write the code): ").strip()
-            # Check for exit command
-            if user_answer.lower() == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize spaces before validation
-            is_correct = validate_code_answer(user_answer, challenge['answer'])
-        
-        # Update score and show feedback
-        if is_correct:
-            print("✓ Correct! Well done!")
-            score += 1
-        else:
-            print(f"✗ Incorrect. The correct answer is: {challenge['answer']}")
-            show_hint(challenge)
-        
-        print(f"Current score: {score}/{i + 1}\n")
-    
-    # Final statistics
-    percentage = (score / total_challenges) * 100
-    print("=" * 50)
-    print(f"Final Score: {score} out of {total_challenges}")
-    print(f"Percentage: {percentage:.1f}%")
-    
-    if percentage == 100:
-        print("Perfect score! You're a matrix master! 🎉")
-    elif percentage >= 80:
-        print("Excellent work! You're getting really good! 🌟")
-    elif percentage >= 60:
-        print("Good job! Keep practicing! 👍")
-    else:
-        print("Keep practicing! You'll get better! 💪")
-    
-    print("\nThank you for playing Matrix Challenge!")
+
+    def build_sequence(_difficulty, code_count, tf_count, used_questions):
+        challenge_sequence = [random.choice(challenge_functions) for _ in range(code_count)]
+        for _ in range(tf_count):
+            challenge_sequence.append(
+                lambda d, u=used_questions: generate_true_false_challenge(d, used_questions=u)
+            )
+        random.shuffle(challenge_sequence)
+        return challenge_sequence
+
+    run_game_session(
+        game_name="Matrix Challenge",
+        subtitle="Master NumPy matrix operations!",
+        perfect_message="Perfect score! You're a matrix master! 🎉",
+        thank_you_message="Thank you for playing Matrix Challenge!",
+        code_validator=validate_code_answer,
+        sequence_builder=build_sequence,
+        show_hint=show_hint,
+    )
 
 
 def main():
-    """
-    Main game loop with play again option.
-    """
-    while True:
-        play_game()
-        
-        # Ask if user wants to play again
-        while True:
-            play_again = input("\nWould you like to play again? (yes/no): ").strip().lower()
-            if play_again in ["yes", "y", "no", "n"]:
-                break
-            print("Invalid choice. Please enter 'yes' or 'no'.")
-        
-        if play_again in ["no", "n"]:
-            print("\nWe'll talk later! 👋")
-            break
-        print("\n" + "=" * 50 + "\n")
+    """Main game loop with play-again prompt."""
+    run_with_replay(play_game)
 
 
 if __name__ == "__main__":

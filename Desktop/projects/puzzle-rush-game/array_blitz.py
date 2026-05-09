@@ -1,5 +1,8 @@
 import numpy as np
 import random
+from code_validators import validate_code_answer as shared_validate_code_answer
+from engine import run_game_session, run_with_replay
+from game_common import pick_true_false_statement
 
 """
 Array Blitz - A fast-paced NumPy array manipulation game
@@ -473,128 +476,54 @@ def generate_permutation_challenge(difficulty="easy"):
     return {"type": "permutation", "question": question, "answer": answer, "hint": hint}
 
 
-def validate_array_answer(user_input, correct_answer):
-    """
-    Validate user's array answer.
-    User input is expected to be a string that can be parsed as a list/array.
-    """
-    try:
-        # Parse string input like "[1, 2, 3]" or "1, 2, 3"
-        user_input = user_input.strip()
-        if user_input.startswith('[') and user_input.endswith(']'):
-            user_input = user_input[1:-1]
-        # Convert to list then numpy array
-        user_array = np.array([int(x.strip()) for x in user_input.split(',')])
-        return np.array_equal(user_array, correct_answer)
-    except (ValueError, AttributeError):
-        return False
-
-
-def generate_true_false_challenge(difficulty="easy"):
-    """Generate true/false questions about array operations"""
-    question_type = random.choice([
-        "reshape", "copy_view", "slicing", "filtering", "sorting", 
-        "concatenation", "searching", "indexing", "shape", "creation"
-    ])
-    
-    if difficulty == "easy":
-        if question_type == "reshape":
-            question = "True or False: Reshaping an array changes the total number of elements."
-            answer = "false"
-        elif question_type == "copy_view":
-            question = "True or False: array.copy() creates a deep copy that is independent of the original."
-            answer = "true"
-        elif question_type == "slicing":
-            question = "True or False: Slicing an array (e.g., array[1:3]) creates a view, not a copy."
-            answer = "true"
-        elif question_type == "filtering":
-            question = "True or False: array[array > 5] returns a new array with elements greater than 5."
-            answer = "true"
-        else:  # shape
-            question = "True or False: The shape of a 1D array with 10 elements is (10, 1)."
-            answer = "false"
-        hint = "Think about how NumPy handles array operations"
-    elif difficulty == "medium":
-        if question_type == "reshape":
-            question = "True or False: You can reshape a (3, 4) array to (2, 6) because both have 12 elements."
-            answer = "true"
-        elif question_type == "copy_view":
-            question = "True or False: Modifying a view of an array will also modify the original array."
-            answer = "true"
-        elif question_type == "slicing":
-            question = "True or False: array[::-1] reverses the array."
-            answer = "true"
-        elif question_type == "filtering":
-            question = "True or False: Boolean indexing (array[array > 5]) returns a copy, not a view."
-            answer = "true"
-        elif question_type == "sorting":
-            question = "True or False: np.sort(array) modifies the original array in-place."
-            answer = "false"
-        elif question_type == "concatenation":
-            question = "True or False: np.concatenate() can join arrays along any axis."
-            answer = "true"
-        elif question_type == "searching":
-            question = "True or False: np.where(array == 5) returns the indices where the condition is True."
-            answer = "true"
-        elif question_type == "indexing":
-            question = "True or False: array[0] and array[0, :] are equivalent for a 2D array."
-            answer = "false"
-        else:  # shape
-            question = "True or False: A 2D array with shape (3, 4) has 7 elements total."
-            answer = "false"
-        hint = "Consider how NumPy operations work internally"
-    else:  # hard
-        if question_type == "reshape":
-            question = "True or False: You can use -1 in reshape to automatically calculate one dimension."
-            answer = "true"
-        elif question_type == "copy_view":
-            question = "True or False: array.view() creates a new array object that shares the same data buffer."
-            answer = "true"
-        elif question_type == "slicing":
-            question = "True or False: array[::2] selects every other element starting from index 0."
-            answer = "true"
-        elif question_type == "filtering":
-            question = "True or False: Multiple conditions can be combined with & (and) or | (or) for boolean indexing."
-            answer = "true"
-        elif question_type == "sorting":
-            question = "True or False: array.sort() sorts the array in-place and returns None."
-            answer = "true"
-        elif question_type == "concatenation":
-            question = "True or False: np.concatenate() requires arrays to have the same shape along all axes except the concatenation axis."
-            answer = "true"
-        elif question_type == "searching":
-            question = "True or False: np.argmax(array) returns the index of the maximum value."
-            answer = "true"
-        elif question_type == "indexing":
-            question = "True or False: Fancy indexing (array[[0, 2, 4]]) always returns a copy."
-            answer = "true"
-        elif question_type == "shape":
-            question = "True or False: A 3D array with shape (2, 3, 4) has 24 elements total."
-            answer = "true"
-        else:  # creation
-            question = "True or False: np.arange(0, 10, 2) creates an array [0, 2, 4, 6, 8]."
-            answer = "true"
-        hint = "Advanced NumPy concepts require understanding memory layout and operations"
-    
+def generate_true_false_challenge(difficulty="easy", *, used_questions=None):
+    """Generate true/false questions about array operations."""
+    statements_by_difficulty = {
+        "easy": [
+            ("True or False: Reshaping an array changes the total number of elements.", "false"),
+            ("True or False: array.copy() creates a deep copy that is independent of the original.", "true"),
+            ("True or False: Slicing an array (e.g., array[1:3]) creates a view, not a copy.", "true"),
+            ("True or False: array[array > 5] returns a new array with elements greater than 5.", "true"),
+            ("True or False: The shape of a 1D array with 10 elements is (10, 1).", "false"),
+        ],
+        "medium": [
+            ("True or False: You can reshape a (3, 4) array to (2, 6) because both have 12 elements.", "true"),
+            ("True or False: Modifying a view of an array will also modify the original array.", "true"),
+            ("True or False: array[::-1] reverses the array.", "true"),
+            ("True or False: Boolean indexing (array[array > 5]) returns a copy, not a view.", "true"),
+            ("True or False: np.sort(array) modifies the original array in-place.", "false"),
+            ("True or False: np.concatenate() can join arrays along any axis.", "true"),
+            ("True or False: np.where(array == 5) returns the indices where the condition is True.", "true"),
+            ("True or False: array[0] and array[0, :] are equivalent for a 2D array.", "false"),
+            ("True or False: A 2D array with shape (3, 4) has 7 elements total.", "false"),
+        ],
+        "hard": [
+            ("True or False: You can use -1 in reshape to automatically calculate one dimension.", "true"),
+            ("True or False: array.view() creates a new array object that shares the same data buffer.", "true"),
+            ("True or False: array[::2] selects every other element starting from index 0.", "true"),
+            ("True or False: Multiple conditions can be combined with & (and) or | (or) for boolean indexing.", "true"),
+            ("True or False: array.sort() sorts the array in-place and returns None.", "true"),
+            ("True or False: np.concatenate() requires arrays to have the same shape along all axes except the concatenation axis.", "true"),
+            ("True or False: np.argmax(array) returns the index of the maximum value.", "true"),
+            ("True or False: Fancy indexing (array[[0, 2, 4]]) always returns a copy.", "true"),
+            ("True or False: A 3D array with shape (2, 3, 4) has 24 elements total.", "true"),
+            ("True or False: np.arange(0, 10, 2) creates an array [0, 2, 4, 6, 8].", "true"),
+        ],
+    }
+    hints_by_difficulty = {
+        "easy": "Think about how NumPy handles array operations",
+        "medium": "Consider how NumPy operations work internally",
+        "hard": "Advanced NumPy concepts require understanding memory layout and operations",
+    }
+    question, answer, hint = pick_true_false_statement(
+        difficulty, statements_by_difficulty, hints_by_difficulty, used_questions=used_questions
+    )
     return {"type": "true_false", "question": question, "answer": answer, "hint": hint}
 
 
 def validate_code_answer(user_input, correct_answer):
-    """
-    Validate user's code answer.
-    Normalizes whitespace and handles variations in code formatting.
-    """
-    # Normalize both strings: remove extra whitespace, convert to lowercase
-    def normalize_code(code):
-        # Remove all whitespace
-        code = ''.join(code.split())
-        # Convert to lowercase for case-insensitive comparison
-        return code.lower()
-    
-    user_normalized = normalize_code(user_input)
-    correct_normalized = normalize_code(correct_answer)
-    
-    return user_normalized == correct_normalized
+    """Validate user's code answer using shared default profile."""
+    return shared_validate_code_answer(user_input, correct_answer, profile="default")
 
 
 def show_hint(challenge):
@@ -602,41 +531,9 @@ def show_hint(challenge):
 
 
 def play_game():
-    """
-    Run a single game session.
-    """
-    print("Welcome to Array Blitz! The game that will test your manipulation skills... On arrays, of course :)")
-    print("Test your NumPy array manipulation skills!\n")
-    
-    # Difficulty selection
-    while True:
-        difficulty = input("Select difficulty (easy/medium/hard or 1/2/3): ").strip().lower()
-        # Map numeric shortcuts to difficulty levels
-        if difficulty == "1":
-            difficulty = "easy"
-        elif difficulty == "2":
-            difficulty = "medium"
-        elif difficulty == "3":
-            difficulty = "hard"
-        if difficulty in ["easy", "medium", "hard"]:
-            break
-        print("Invalid choice. Please enter 'easy', 'medium', 'hard', or '1', '2', '3'.")
-    
-    print(f"\nYou selected {difficulty.upper()} difficulty. Good luck!")
-    print("(Tip: Type 'exit' at any time to quit the current round)\n")
-    
-    # Set number of challenges based on difficulty
-    if difficulty == "easy":
-        total_challenges = 6  # 5 code + 1 T/F
-    elif difficulty == "medium":
-        total_challenges = 13  # 10 code + 3 T/F
-    else:  # hard
-        total_challenges = 20  # 15 code + 5 T/F
-    
-    # Initialize score tracking
-    score = 0
-    
-    # Challenge functions (excluding shape - it will be added once)
+    """Run a single game session."""
+
+    # Challenge functions (excluding shape - it will be added once).
     other_challenge_functions = [
         generate_create_challenge,
         generate_reshape_challenge,
@@ -651,115 +548,37 @@ def play_game():
         generate_join_challenge,
         generate_split_challenge,
         generate_sort_challenge,
-        generate_permutation_challenge
+        generate_permutation_challenge,
     ]
-    
-    # Determine number of T/F questions
-    if difficulty == "easy":
-        tf_count = 1
-        code_count = 5
-    elif difficulty == "medium":
-        tf_count = 3
-        code_count = 10
-    else:  # hard
-        tf_count = 5
-        code_count = 15
-    
-    # Create challenge sequence: ensure shape appears exactly once
-    # Fill code challenge slots with other challenge types for diversity
-    challenge_sequence = [generate_shape_challenge]  # Shape appears once
-    
-    # Fill the rest of code challenges
-    remaining_code_slots = code_count - 1
-    for _ in range(remaining_code_slots):
-        challenge_sequence.append(random.choice(other_challenge_functions))
-    
-    # Add T/F questions
-    for _ in range(tf_count):
-        challenge_sequence.append(generate_true_false_challenge)
-    
-    # Shuffle to randomize order (shape will appear somewhere in the sequence)
-    random.shuffle(challenge_sequence)
-    
-    # Game loop
-    for i in range(total_challenges):
-        print(f"--- Challenge {i + 1} of {total_challenges} ---")
-        
-        # Get challenge function from sequence
-        challenge_func = challenge_sequence[i]
-        challenge = challenge_func(difficulty)
-        
-        # Display question
-        print(f"\n{challenge['question']}\n")
-        
-        # Get user input - check if it's a T/F question
-        if challenge['type'] == 'true_false':
-            user_answer = input("Your answer (true/false or t/f): ").strip().lower()
-            # Check for exit command
-            if user_answer == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize T/F answers
-            if user_answer in ['t', 'true']:
-                user_answer = 'true'
-            elif user_answer in ['f', 'false']:
-                user_answer = 'false'
-            is_correct = user_answer == challenge['answer']
-        else:
-            user_answer = input("Your answer (write the code): ").strip()
-            # Check for exit command
-            if user_answer.lower() == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize spaces before validation
-            is_correct = validate_code_answer(user_answer, challenge['answer'])
-        
-        # Update score and show feedback
-        if is_correct:
-            print("✓ Correct! Well done!")
-            score += 1
-        else:
-            print(f"✗ Incorrect. The correct answer is: {challenge['answer']}")
-            show_hint(challenge)
-        
-        print(f"Current score: {score}/{i + 1}\n")
-    
-    # Final statistics
-    percentage = (score / total_challenges) * 100
-    print("=" * 50)
-    print(f"Final Score: {score} out of {total_challenges}")
-    print(f"Percentage: {percentage:.1f}%")
-    
-    if percentage == 100:
-        print("Perfect score! You're an array master! 🎉")
-    elif percentage >= 80:
-        print("Excellent work! You're getting really good! 🌟")
-    elif percentage >= 60:
-        print("Good job! Keep practicing! 👍")
-    else:
-        print("Keep practicing! You'll get better! 💪")
-    
-    print("\nThank you for playing Array Blitz!")
+
+    def build_sequence(_difficulty, code_count, tf_count, used_questions):
+        # Ensure shape appears exactly once each session.
+        challenge_sequence = [generate_shape_challenge]
+        remaining_code_slots = code_count - 1
+        for _ in range(remaining_code_slots):
+            challenge_sequence.append(random.choice(other_challenge_functions))
+        for _ in range(tf_count):
+            challenge_sequence.append(
+                lambda d, u=used_questions: generate_true_false_challenge(d, used_questions=u)
+            )
+        random.shuffle(challenge_sequence)
+        return challenge_sequence
+
+    run_game_session(
+        game_name="Array Blitz",
+        subtitle="The game that will test your manipulation skills... On arrays, of course :)\n"
+        "Test your NumPy array manipulation skills!",
+        perfect_message="Perfect score! You're an array master! 🎉",
+        thank_you_message="Thank you for playing Array Blitz!",
+        code_validator=validate_code_answer,
+        sequence_builder=build_sequence,
+        show_hint=show_hint,
+    )
 
 
 def main():
-    """
-    Main game loop with play again option.
-    """
-    while True:
-        play_game()
-        
-        # Ask if user wants to play again
-        while True:
-            play_again = input("\nWould you like to play again? (yes/no): ").strip().lower()
-            if play_again in ["yes", "y", "no", "n"]:
-                break
-            print("Invalid choice. Please enter 'yes' or 'no'.")
-        
-        if play_again in ["no", "n"]:
-            print("\nWe'll talk later! 👋")
-            break
-        print("\n" + "=" * 50 + "\n")
+    """Main game loop with play-again prompt."""
+    run_with_replay(play_game)
 
 
 if __name__ == "__main__":

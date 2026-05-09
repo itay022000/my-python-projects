@@ -1,5 +1,8 @@
 import numpy as np
 import random
+from code_validators import validate_code_answer as shared_validate_code_answer
+from engine import run_game_session, run_with_replay
+from game_common import pick_true_false_statement
 
 """
 Ufunc Arena - Master NumPy Universal Functions
@@ -560,110 +563,60 @@ def generate_set_operations_challenge(difficulty="easy"):
     return {"type": "set_operations", "question": question, "answer": answer, "hint": hint}
 
 
-def generate_true_false_challenge(difficulty="easy"):
-    """Generate true/false questions about ufunc operations"""
-    question_type = random.choice([
-        "arithmetic", "rounding", "logarithm", "summation", "product",
-        "difference", "lcm_gcd", "set_ops", "elementwise", "aggregation"
-    ])
-    
-    if difficulty == "easy":
-        if question_type == "arithmetic":
-            question = "True or False: np.add(a, b) performs element-wise addition when a and b are arrays."
-            answer = "true"
-        elif question_type == "rounding":
-            question = "True or False: np.round(3.7) returns 4."
-            answer = "true"
-        elif question_type == "logarithm":
-            question = "True or False: np.log10(100) returns 2."
-            answer = "true"
-        elif question_type == "summation":
-            question = "True or False: np.sum(array) adds all elements in the array."
-            answer = "true"
-        else:  # product
-            question = "True or False: np.prod(array) multiplies all elements in the array."
-            answer = "true"
-        hint = "Think about how NumPy ufuncs work"
-    elif difficulty == "medium":
-        if question_type == "arithmetic":
-            question = "True or False: np.multiply() and * operator perform the same element-wise multiplication."
-            answer = "true"
-        elif question_type == "rounding":
-            question = "True or False: np.floor(3.7) returns 3.0."
-            answer = "true"
-        elif question_type == "logarithm":
-            question = "True or False: np.log(1) returns 0."
-            answer = "true"
-        elif question_type == "summation":
-            question = "True or False: np.sum(array, axis=0) sums along the first axis (rows)."
-            answer = "true"
-        elif question_type == "product":
-            question = "True or False: np.prod(array) returns 0 if any element is 0."
-            answer = "true"
-        elif question_type == "difference":
-            question = "True or False: np.diff(array) returns an array with one fewer element than the original."
-            answer = "true"
-        elif question_type == "lcm_gcd":
-            question = "True or False: np.gcd(12, 18) returns 6."
-            answer = "true"
-        elif question_type == "set_ops":
-            question = "True or False: np.unique(array) returns sorted unique values."
-            answer = "true"
-        else:  # elementwise
-            question = "True or False: All NumPy arithmetic ufuncs work element-wise on arrays."
-            answer = "true"
-        hint = "Consider how ufuncs operate on arrays"
-    else:  # hard
-        if question_type == "arithmetic":
-            question = "True or False: np.divide() can handle broadcasting when array shapes are compatible."
-            answer = "true"
-        elif question_type == "rounding":
-            question = "True or False: np.trunc() and np.floor() always return the same result for positive numbers."
-            answer = "true"
-        elif question_type == "logarithm":
-            question = "True or False: np.exp(np.log(x)) returns x for positive x."
-            answer = "true"
-        elif question_type == "summation":
-            question = "True or False: np.cumsum(array) returns the cumulative sum as a new array."
-            answer = "true"
-        elif question_type == "product":
-            question = "True or False: np.cumprod(array) computes the cumulative product."
-            answer = "true"
-        elif question_type == "difference":
-            question = "True or False: np.diff(array, n=2) computes second-order differences."
-            answer = "true"
-        elif question_type == "lcm_gcd":
-            question = "True or False: np.lcm.reduce([4, 6, 8]) finds the LCM of all three numbers."
-            answer = "true"
-        elif question_type == "set_ops":
-            question = "True or False: np.setdiff1d(a, b) returns elements in a but not in b."
-            answer = "true"
-        elif question_type == "elementwise":
-            question = "True or False: Ufuncs automatically broadcast arrays with compatible shapes."
-            answer = "true"
-        else:  # aggregation
-            question = "True or False: Aggregation functions like sum() and prod() can operate along specific axes."
-            answer = "true"
-        hint = "Advanced ufunc operations involve broadcasting and axis handling"
-    
+def generate_true_false_challenge(difficulty="easy", *, used_questions=None):
+    """Generate true/false questions about ufunc operations."""
+    statements_by_difficulty = {
+        "easy": [
+            ("True or False: np.add(a, b) performs element-wise addition when a and b are arrays.", "true"),
+            ("True or False: np.round(3.7) returns 4.", "true"),
+            ("True or False: np.log10(100) returns 2.", "true"),
+            ("True or False: np.sum(array) adds all elements in the array.", "true"),
+            ("True or False: np.prod(array) multiplies all elements in the array.", "true"),
+            ("True or False: np.log10(10) returns 10.", "false"),
+            ("True or False: np.ceil(2.1) returns 2.", "false"),
+        ],
+        "medium": [
+            ("True or False: np.multiply() and * operator perform the same element-wise multiplication.", "true"),
+            ("True or False: np.floor(3.7) returns 3.0.", "true"),
+            ("True or False: np.log(1) returns 0.", "true"),
+            ("True or False: np.sum(array, axis=0) sums along the first axis (rows).", "true"),
+            ("True or False: np.prod(array) returns 0 if any element is 0.", "true"),
+            ("True or False: np.diff(array) returns an array with one fewer element than the original.", "true"),
+            ("True or False: np.gcd(12, 18) returns 6.", "true"),
+            ("True or False: np.unique(array) returns sorted unique values.", "true"),
+            ("True or False: All NumPy arithmetic ufuncs work element-wise on arrays.", "true"),
+            ("True or False: np.log(10) returns 1.", "false"),
+            ("True or False: np.gcd(4, 6, 8) accepts three integers in one call and returns their overall GCD.", "false"),
+        ],
+        "hard": [
+            ("True or False: np.divide() can handle broadcasting when array shapes are compatible.", "true"),
+            ("True or False: np.trunc() and np.floor() always return the same result for positive numbers.", "true"),
+            ("True or False: np.exp(np.log(x)) returns x for positive x.", "true"),
+            ("True or False: np.cumsum(array) returns the cumulative sum as a new array.", "true"),
+            ("True or False: np.cumprod(array) computes the cumulative product.", "true"),
+            ("True or False: np.diff(array, n=2) computes second-order differences.", "true"),
+            ("True or False: np.lcm.reduce([4, 6, 8]) finds the LCM of all three numbers.", "true"),
+            ("True or False: np.setdiff1d(a, b) returns elements in a but not in b.", "true"),
+            ("True or False: Ufuncs automatically broadcast arrays with compatible shapes.", "true"),
+            ("True or False: Aggregation functions like sum() and prod() can operate along specific axes.", "true"),
+            ("True or False: np.prod on an empty array returns 0.", "false"),
+            ("True or False: np.trunc(x) and np.floor(x) always return the same value for every x.", "false"),
+        ],
+    }
+    hints_by_difficulty = {
+        "easy": "Think about how NumPy ufuncs work",
+        "medium": "Consider how ufuncs operate on arrays",
+        "hard": "Advanced ufunc operations involve broadcasting and axis handling",
+    }
+    question, answer, hint = pick_true_false_statement(
+        difficulty, statements_by_difficulty, hints_by_difficulty, used_questions=used_questions
+    )
     return {"type": "true_false", "question": question, "answer": answer, "hint": hint}
 
 
 def validate_code_answer(user_input, correct_answer):
-    """
-    Validate user's code answer.
-    Normalizes whitespace and handles variations in code formatting.
-    """
-    def normalize_code(code):
-        # Remove all whitespace
-        code = ''.join(code.split())
-        # Convert to lowercase for case-insensitive comparison
-        return code.lower()
-    
-    user_normalized = normalize_code(user_input)
-    correct_normalized = normalize_code(correct_answer)
-    
-    return user_normalized == correct_normalized
+    """Validate user's code answer using shared default profile."""
+    return shared_validate_code_answer(user_input, correct_answer, profile="default")
 
 
 def show_hint(challenge):
@@ -672,41 +625,8 @@ def show_hint(challenge):
 
 
 def play_game():
-    """
-    Run a single game session.
-    """
-    print("Welcome to Ufunc Arena!")
-    print("Master NumPy Universal Functions!\n")
-    
-    # Difficulty selection
-    while True:
-        difficulty = input("Select difficulty (easy/medium/hard or 1/2/3): ").strip().lower()
-        # Map numeric shortcuts to difficulty levels
-        if difficulty == "1":
-            difficulty = "easy"
-        elif difficulty == "2":
-            difficulty = "medium"
-        elif difficulty == "3":
-            difficulty = "hard"
-        if difficulty in ["easy", "medium", "hard"]:
-            break
-        print("Invalid choice. Please enter 'easy', 'medium', 'hard', or '1', '2', '3'.")
-    
-    print(f"\nYou selected {difficulty.upper()} difficulty. Good luck!")
-    print("(Tip: Type 'exit' at any time to quit the current round)\n")
-    
-    # Set number of challenges based on difficulty
-    if difficulty == "easy":
-        total_challenges = 6  # 5 code + 1 T/F
-    elif difficulty == "medium":
-        total_challenges = 13  # 10 code + 3 T/F
-    else:  # hard
-        total_challenges = 20  # 15 code + 5 T/F
-    
-    # Initialize score tracking
-    score = 0
-    
-    # Challenge functions
+    """Run a single game session."""
+
     challenge_functions = [
         generate_arithmetic_challenge,
         generate_rounding_challenge,
@@ -715,96 +635,32 @@ def play_game():
         generate_product_challenge,
         generate_difference_challenge,
         generate_lcm_gcd_challenge,
-        generate_set_operations_challenge
+        generate_set_operations_challenge,
     ]
-    
-    # Create challenge sequence with diversity
-    challenge_sequence = []
-    for _ in range(total_challenges):
-        challenge_sequence.append(random.choice(challenge_functions))
-    
-    # Shuffle to randomize order
-    random.shuffle(challenge_sequence)
-    
-    # Game loop
-    for i in range(total_challenges):
-        print(f"--- Challenge {i + 1} of {total_challenges} ---")
-        
-        # Get challenge function from sequence
-        challenge_func = challenge_sequence[i]
-        challenge = challenge_func(difficulty)
-        
-        # Display question
-        print(f"\n{challenge['question']}\n")
-        
-        # Get user input - check if it's a T/F question
-        if challenge['type'] == 'true_false':
-            user_answer = input("Your answer (true/false or t/f): ").strip().lower()
-            # Check for exit command
-            if user_answer == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize T/F answers
-            if user_answer in ['t', 'true']:
-                user_answer = 'true'
-            elif user_answer in ['f', 'false']:
-                user_answer = 'false'
-            is_correct = user_answer == challenge['answer']
-        else:
-            user_answer = input("Your answer (write the code): ").strip()
-            # Check for exit command
-            if user_answer.lower() == 'exit':
-                print("\nRound ended. Returning to menu...")
-                return
-            # Normalize spaces before validation
-            is_correct = validate_code_answer(user_answer, challenge['answer'])
-        
-        # Update score and show feedback
-        if is_correct:
-            print("✓ Correct! Well done!")
-            score += 1
-        else:
-            print(f"✗ Incorrect. The correct answer is: {challenge['answer']}")
-            show_hint(challenge)
-        
-        print(f"Current score: {score}/{i + 1}\n")
-    
-    # Final statistics
-    percentage = (score / total_challenges) * 100
-    print("=" * 50)
-    print(f"Final Score: {score} out of {total_challenges}")
-    print(f"Percentage: {percentage:.1f}%")
-    
-    if percentage == 100:
-        print("Perfect score! You're a ufunc master! 🎉")
-    elif percentage >= 80:
-        print("Excellent work! You're getting really good! 🌟")
-    elif percentage >= 60:
-        print("Good job! Keep practicing! 👍")
-    else:
-        print("Keep practicing! You'll get better! 💪")
-    
-    print("\nThank you for playing Ufunc Arena!")
+
+    def build_sequence(_difficulty, code_count, tf_count, used_questions):
+        challenge_sequence = [random.choice(challenge_functions) for _ in range(code_count)]
+        for _ in range(tf_count):
+            challenge_sequence.append(
+                lambda d, u=used_questions: generate_true_false_challenge(d, used_questions=u)
+            )
+        random.shuffle(challenge_sequence)
+        return challenge_sequence
+
+    run_game_session(
+        game_name="Ufunc Arena",
+        subtitle="Master NumPy Universal Functions!",
+        perfect_message="Perfect score! You're a ufunc master! 🎉",
+        thank_you_message="Thank you for playing Ufunc Arena!",
+        code_validator=validate_code_answer,
+        sequence_builder=build_sequence,
+        show_hint=show_hint,
+    )
 
 
 def main():
-    """
-    Main game loop with play again option.
-    """
-    while True:
-        play_game()
-        
-        # Ask if user wants to play again
-        while True:
-            play_again = input("\nWould you like to play again? (yes/no): ").strip().lower()
-            if play_again in ["yes", "y", "no", "n"]:
-                break
-            print("Invalid choice. Please enter 'yes' or 'no'.")
-        
-        if play_again in ["no", "n"]:
-            print("\nWe'll talk later! 👋")
-            break
-        print("\n" + "=" * 50 + "\n")
+    """Main game loop with play-again prompt."""
+    run_with_replay(play_game)
 
 
 if __name__ == "__main__":
