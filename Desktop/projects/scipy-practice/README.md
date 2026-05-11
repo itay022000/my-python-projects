@@ -11,7 +11,7 @@ This project focuses on practical SciPy modules:
 - **Sparse Matrices** - CSR and CSC formats
 - **CSGraph** - Graph algorithms and shortest paths
 - **Spatial Data** - Distance calculations (excluding cosine distance)
-- **Interpolation** - 1D and 2D interpolation methods
+- **Interpolation** - 1D interpolation (`interp1d`: linear, quadratic, cubic, nearest)
 
 ## 🚀 Getting Started
 
@@ -40,18 +40,45 @@ This project focuses on practical SciPy modules:
 ## 📖 Usage
 
 The program provides an interactive menu where you can:
-- Choose a module to practice
+- Choose a module to practice (options **1–6**), show revision info (**0**), or exit (**7**)
 - Learn through examples and explanations
 - Answer practice questions to test your understanding
 - Navigate between different exercises easily
+- Track progress with question counters like **Question 2/5**
+- Skip a practice question by typing **skip**
+- Leave an exercise early by typing **exit** or **quit** at a practice prompt
 
 ## 📁 Project Structure
 
 ```
 scipy-practice/
-├── main.py              # Main application with all exercises
+├── main.py              # Entry point: menu, LAST_UPDATED, and CLI loop
+├── engine.py            # Question specs + run_exercise_questions() shared runner
+├── practice.py          # normalize_code(), ask_question(), ExerciseAbort
+├── exercises.py         # All six exercise_* sessions (SciPy topics)
+├── verify_smoke.py      # Quick import/menu smoke check
+├── generate_answers.py  # Regenerates/checks ANSWERS.md from exercises.py
+├── tests/               # Focused unittest coverage for helper behavior
 ├── requirements.txt     # Python dependencies
-└── README.md           # This file
+├── ANSWERS.md           # Generated reference answers for practice questions
+└── README.md            # This file
+```
+
+## ✅ Verification
+
+Run the smoke check:
+```bash
+python verify_smoke.py
+```
+
+Run the helper tests:
+```bash
+python -m unittest discover -s tests
+```
+
+Verify the answer key is synced with `exercises.py`:
+```bash
+python generate_answers.py --check
 ```
 
 ## 🎯 Exercises
@@ -72,7 +99,7 @@ Use graph algorithms including shortest path calculations and connected componen
 Calculate various distance metrics (Euclidean, Manhattan, Chebyshev) and work with distance matrices.
 
 ### 6. Interpolation
-Perform 1D and 2D interpolation using linear, cubic, and other methods.
+Perform **1D** interpolation using `interp1d` (linear, quadratic, cubic, nearest and other kinds supported by the exercise).
 
 ## 💡 Learning Tips
 
@@ -97,6 +124,10 @@ This project is intentionally simpler and more focused than comprehensive pandas
 - Practical, hands-on exercises
 - Focused learning on specific SciPy modules
 - Easy to extend with additional exercises
+
+### Safety note
+
+Practice answers are evaluated locally with Python's `eval()` so the tool can check live SciPy expressions. Only run this project with code you trust; it is not designed for untrusted users, a shared public service, or browser/server execution without sandboxing.
 
 ---
 
