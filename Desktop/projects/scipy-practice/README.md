@@ -2,7 +2,7 @@
 
 A simple, maintainable project to practice key SciPy modules through hands-on exercises.
 
-## 📚 What You'll Learn
+## What You'll Learn
 
 This project focuses on practical SciPy modules:
 
@@ -13,122 +13,95 @@ This project focuses on practical SciPy modules:
 - **Spatial Data** - Distance calculations (excluding cosine distance)
 - **Interpolation** - 1D interpolation (`interp1d`: linear, quadratic, cubic, nearest)
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python **3.10.9** recommended (3.8+ may work)
 - pip (Python package installer)
 
 ### Installation
 
-1. **Navigate to the project directory:**
-   ```bash
-   cd scipy-practice
-   ```
+A virtual environment is recommended. On Anaconda base, NumPy 2.x with older SciPy wheels can fail to import — use a venv:
 
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+cd scipy-practice
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-3. **Run the application:**
-   ```bash
-   python main.py
-   ```
+**Tested with:** Python 3.10.9, NumPy 1.26.x, SciPy 1.11.x in a venv.  
+`requirements.txt` keeps flexible lower bounds (`numpy>=1.20`, `scipy>=1.7`).
 
-## 📖 Usage
+### Run
+
+```bash
+python main.py
+```
+
+## Usage
 
 The program provides an interactive menu where you can:
+
 - Choose a module to practice (options **1–6**), show revision info (**0**), or exit (**7**)
 - Learn through examples and explanations
 - Answer practice questions to test your understanding
-- Navigate between different exercises easily
-- Track progress with question counters like **Question 2/5**
+- Track progress with question counters like **Question 2/5** (interpolation has **4** questions)
 - Skip a practice question by typing **skip**
 - Leave an exercise early by typing **exit** or **quit** at a practice prompt
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 scipy-practice/
-├── main.py              # Entry point: menu, LAST_UPDATED, and CLI loop
-├── engine.py            # Question specs + run_exercise_questions() shared runner
-├── practice.py          # normalize_code(), ask_question(), ExerciseAbort
-├── exercises.py         # All six exercise_* sessions (SciPy topics)
-├── verify_smoke.py      # Quick import/menu smoke check
-├── generate_answers.py  # Regenerates/checks ANSWERS.md from exercises.py
-├── tests/               # Focused unittest coverage for helper behavior
-├── requirements.txt     # Python dependencies
-├── ANSWERS.md           # Generated reference answers for practice questions
-└── README.md            # This file
+├── main.py                    # Entry point: menu, LAST_UPDATED, CLI loop
+├── engine.py                  # Question specs + run_exercise_questions()
+├── practice.py                # normalize_code(), ask_question(), ExerciseAbort
+├── exercises.py               # Six exercise_* sessions + PRACTICE_BUILDERS
+├── verify_smoke.py            # Menu 0 + exit smoke
+├── verify_answer_behavior.py  # All 29 questions: correct/wrong grading matrix
+├── verify_skip_exit_behavior.py  # All 29 questions: skip + exit at each prompt
+├── generate_answers.py        # Regenerates/checks ANSWERS.md
+├── tests/                     # Unittest coverage for helpers
+├── requirements.txt
+├── ANSWERS.md
+└── README.md
 ```
 
-## ✅ Verification
+## Verification
 
-Run the smoke check:
+Run from this directory (venv active, SciPy installed):
+
 ```bash
-python verify_smoke.py
+python3 -m unittest discover -s tests -v
+python3 verify_smoke.py
+python3 generate_answers.py --check
+python3 verify_answer_behavior.py
+python3 verify_skip_exit_behavior.py
 ```
 
-Run the helper tests:
-```bash
-python -m unittest discover -s tests
-```
+All five must exit **0** before release.
 
-Verify the answer key is synced with `exercises.py`:
-```bash
-python generate_answers.py --check
-```
+### Release timestamp
 
-## 🎯 Exercises
+`main.py` defines **`LAST_UPDATED`** (menu option **0**). **Update it whenever you change project behavior or content** — it is the learner-visible “last updated” stamp for this repo.
 
-### 1. Constants
-Practice using physical and mathematical constants, unit conversions for length and time, and binary prefixes.
+## Exercises
 
-### 2. Optimization
-Learn to find roots of functions and minimize functions using SciPy's optimization tools.
+| # | Module | Questions |
+|---|--------|-----------|
+| 1 | Constants | 5 (`N * const.x` and `const.x * N` both accepted) |
+| 2 | Optimization | 5 (full `optimize.root` / `minimize` result objects) |
+| 3 | Sparse Matrices | 5 |
+| 4 | CSGraph | 5 |
+| 5 | Spatial Data | 5 |
+| 6 | Interpolation | 4 |
 
-### 3. Sparse Matrices
-Work with Compressed Sparse Row (CSR) and Compressed Sparse Column (CSC) matrix formats, including creation, conversion, and operations.
+## Safety note
 
-### 4. CSGraph
-Use graph algorithms including shortest path calculations and connected component analysis.
+Practice answers are evaluated locally with Python's `eval()`. Only run with code you trust; not for untrusted users or unsandboxed server use.
 
-### 5. Spatial Data
-Calculate various distance metrics (Euclidean, Manhattan, Chebyshev) and work with distance matrices.
-
-### 6. Interpolation
-Perform **1D** interpolation using `interp1d` (linear, quadratic, cubic, nearest and other kinds supported by the exercise).
-
-## 💡 Learning Tips
-
-1. **Start with Constants** - Get familiar with SciPy's constant values and conversions
-2. **Practice Optimization** - Understanding root finding and minimization is crucial for many applications
-3. **Master Sparse Matrices** - Essential for working with large, sparse datasets
-4. **Explore Graph Algorithms** - Useful for network analysis and pathfinding problems
-5. **Understand Spatial Distances** - Important for clustering, classification, and similarity calculations
-6. **Learn Interpolation** - Key for data smoothing and estimating values between known points
-
-## 📚 Additional Resources
+## Additional Resources
 
 - [SciPy Documentation](https://docs.scipy.org/doc/scipy/)
-- [SciPy Constants](https://docs.scipy.org/doc/scipy/reference/constants.html)
-- [SciPy Optimize](https://docs.scipy.org/doc/scipy/reference/optimize.html)
-- [SciPy Sparse](https://docs.scipy.org/doc/scipy/reference/sparse.html)
-
-## 📝 Notes
-
-This project is intentionally simpler and more focused than comprehensive pandas practice projects. It emphasizes:
-- Clean, maintainable code structure
-- Practical, hands-on exercises
-- Focused learning on specific SciPy modules
-- Easy to extend with additional exercises
-
-### Safety note
-
-Practice answers are evaluated locally with Python's `eval()` so the tool can check live SciPy expressions. Only run this project with code you trust; it is not designed for untrusted users, a shared public service, or browser/server execution without sandboxing.
-
----
-
-**Happy Learning! 🔬📊**

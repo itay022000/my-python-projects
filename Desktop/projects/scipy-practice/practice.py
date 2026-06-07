@@ -31,7 +31,7 @@ def ask_question(
     """
     Ask a question and check the answer.
 
-    Validation policy (Phase 2):
+    Default grading policy:
     - By default, answers are graded semantically: eval() then check_func(result).
     - If require_exact is True, the user's code must match reference_answer (normalized)
       before eval runs (legacy / strict mode).

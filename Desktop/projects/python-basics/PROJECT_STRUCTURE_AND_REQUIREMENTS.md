@@ -1,60 +1,69 @@
 # Python Basics — Project Structure & Requirements
 
-> Comment file: structure and demands for the Python basics teaching project.
+> Reference doc: on-disk layout, topic coverage, and automated verification for the Python basics teaching project.
 
 ---
 
-## 1. Proposed structure (high level)
+## 1. Project layout (current)
+
+All paths are relative to the `python-basics/` directory.
+
+| File / module | Role |
+|---------------|------|
+| **`main.py`** | Entry point; menu 1–10 launches batch sessions, 11 exits |
+| **`batch_1_exercises.py` … `batch_10_exercises.py`** | Exercise pools, session pickers, and `BatchNExercises.start_exercises()` |
+| **`exercise_checks.py`** | Five normalizer profiles (`normalize_code_*`) and checker bundles (`checker_basic`, `checker_lists`, `checker_sets`, `checker_dicts`, `checker_functions`, plus mixed helpers for batches 5, 8, 10) |
+| **`session_runner.py`** | Shared session loops (`run_simple_exercises`, `run_mixed_units_session`), banners/footers, attempt counting |
+| **`verify_exercise_checks_parity.py`** | Normalizer parity vs independent reference implementations |
+| **`verify_project_smoke.py`** | Stochastic smoke across all batches (300 sessions × 10) |
+| **`verify_answer_behavior.py`** | Grading behavior, three-strike logic, pool enumeration |
+| **`README.md`** | User-facing run and verify instructions |
+| **`PROJECT_STRUCTURE_AND_REQUIREMENTS.md`** | This file |
+
+**Dependencies:** CPython stdlib only (no `requirements.txt`).
 
 ---
 
-## 2. Content (topics to cover — adjust as needed)
+## 2. Content (topics covered)
 
 **Exercise question rules (apply to all batches and new question types unless stated otherwise):**
 - **Space normalization:** Apply to every question’s answer (no exceptions).
-- **No overly explicit hints:** Do not name the exact function, keyword, or syntax the user must type (e.g. avoid “using complex(1, 2)” or “use end=” in the question text).
+- **No overly explicit hints:** Do not name the exact function, keyword, or syntax the user must type (e.g. avoid “using complex(1, 2)” or “use end=” in the question text).  
+  *Footnote:* Batch 1 includes a few teaching prompts that reference `end=` or casting by design; those predate this doc rule and are not rewritten in housekeeping passes.
 
-Topics to cover (list may change; exercise batches and structure to be defined later):
+**Batch numbering (menu order):**
 
-**Batch numbering (menu order):**  
-- Batch 1: topics 1–4 (output, comments, variables, data types and casting)  
-- Batch 2: topics 5–6 (strings, booleans)  
-- Batch 3: topic 7 (operators)  
-- Batch 4: topic 8 (lists)
-- Batch 5: topic 9 (tuples)  
-- Batch 6: topic 10 (sets)  
-- Batch 7: topic 11 (dictionaries)  
-- Batch 8: topic 12 (functions)  
-- Batch 9: topics 13–16 (shorthand if, match, range, math)  
-- Batch 10: topics 17–21 (arrays, dates, JSON, try… except, user input)  
+| Batch | Topics | Session shape |
+|-------|--------|---------------|
+| 1 | Output, comments, variables, data types & casting | 12 random single lines |
+| 2 | Strings, booleans | 12 random single lines |
+| 3 | Operators | 12 random single lines |
+| 4 | Lists | 12 random single lines (segment pools) |
+| 5 | Tuples | 12 mixed units (simple + compound) |
+| 6 | Sets | 19 random single lines |
+| 7 | Dictionaries | 11 random single lines |
+| 8 | Functions | 8 mixed units |
+| 9 | Shorthand if, match, range, math | 12 fixed-order single lines |
+| 10 | Arrays, dates, JSON, try/except, user input | 25 mixed units |
 
-All planned batches (1-10) are now implemented.
+Topic checklist (implemented in batches above):
 
 1. Python output (printing text and/or numbers)
 2. Comments
 3. Variables (assigning multiple values)
 4. Basic data types (bool, int, float, complex, str) and casting
-
 5. Strings (slicing, modification, concatenation, format strings)
 6. Booleans (evaluations of values and variables)
-
 7. Operators (arithmetic, assignment, comparison, logical, identity, membership, bitwise)
-
 8. Lists (accessing items, changing items, adding items, removing items, list comprehension, sorting, copying, joining lists)
-
 9. Tuples (accessing, updating, unpacking, joining)
-
 10. Sets (accessing items, adding items, removing items, joining, frozensets)
-
 11. Dictionaries (accessing items, changing items, adding items, removing items, copying)
-
 12. Functions (arguments, *args, **kwargs, decorators, lambda)
-
 13. Shorthand if
 14. Match
 15. Range
 16. Math (min, max, abs, pow)
-
 17. Arrays
 18. Dates
 19. JSON

@@ -6,6 +6,15 @@ Handles all subplot exercise generation, verification, and execution.
 import random
 import re
 
+from exercise_common import (
+    DEFAULT_COLORS,
+    normalize_code,
+    print_sequence_intro,
+    run_exercise_sequence,
+    verify_step_show,
+)
+
+
 class SubplotExercises:
     """
     Class for handling subplot exercises.
@@ -81,20 +90,10 @@ class SubplotExercises:
             
             self.exercises.append(exercise)
     
-    def normalize_code(self, code):
-        """Normalize code string for comparison (remove extra whitespace)."""
-        # Remove leading/trailing whitespace
-        code = code.strip()
-        # Normalize multiple spaces to single space
-        code = re.sub(r'\s+', ' ', code)
-        # Normalize spaces around operators and parentheses
-        code = re.sub(r'\s*([=\[\]\(\)])\s*', r'\1', code)
-        code = re.sub(r'=\s*', '=', code)
-        return code.strip()
     
     def verify_x_array(self, user_input):
         """Verify x array: x = np.array([0, 1, 2, 3])."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'x\s*=', normalized_input, re.IGNORECASE):
@@ -122,7 +121,7 @@ class SubplotExercises:
     
     def verify_y_array(self, user_input, expected_y):
         """Verify y array: y = np.array([n1, n2, n3, n4])."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'y\s*=', normalized_input, re.IGNORECASE):
@@ -153,7 +152,7 @@ class SubplotExercises:
     
     def verify_subplot(self, user_input, expected_params):
         """Verify plt.subplot() call: plt.subplot(rows, cols, index)."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.subplot (not plt.subplots, etc.)
         if not re.search(r'\bplt\.subplot\s*\(', normalized_input, re.IGNORECASE):
@@ -186,7 +185,7 @@ class SubplotExercises:
     
     def verify_plot(self, user_input):
         """Verify plt.plot(x, y) call."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.plot (not plt.plots, etc.)
         if not re.search(r'\bplt\.plot\s*\(', normalized_input, re.IGNORECASE):
@@ -211,7 +210,7 @@ class SubplotExercises:
     
     def verify_title(self, user_input, expected_title):
         """Verify plt.title() call: plt.title("title")."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.title (not plt.titles, etc.)
         if not re.search(r'\bplt\.title\s*\(', normalized_input, re.IGNORECASE):
@@ -233,7 +232,7 @@ class SubplotExercises:
     
     def verify_suptitle(self, user_input, expected_suptitle):
         """Verify plt.suptitle() call: plt.suptitle("title")."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.suptitle (not plt.suptitles, etc.)
         if not re.search(r'\bplt\.suptitle\s*\(', normalized_input, re.IGNORECASE):
@@ -253,15 +252,6 @@ class SubplotExercises:
         
         return True, "Correct!"
     
-    def verify_step_show(self, user_input):
-        """Verify final step: plt.show()."""
-        normalized_input = self.normalize_code(user_input)
-        
-        # Must be exactly plt.show() - no parameters
-        if normalized_input.lower() != 'plt.show()':
-            return False, "Invalid format"
-        
-        return True, "Correct!"
     
     def run_exercise(self, exercise, is_last):
         """Run a single subplot exercise. Returns True if completed, False if skipped."""
@@ -530,7 +520,7 @@ class SubplotExercises:
         print(f"STEP {step_num}: Show the plot")
         while True:
             user_input = input("   Your code: ").strip()
-            correct, message = self.verify_step_show(user_input)
+            correct, message = verify_step_show(user_input)
             if correct:
                 print(f"   ✓ {message}\n")
                 break
@@ -550,42 +540,10 @@ class SubplotExercises:
     
     def start_exercises(self):
         """Start the subplot exercises sequence."""
-        print("="*70)
-        print("MATPLOTLIB PYPLOT PRACTICE - SUBPLOT EXERCISES")
-        print("="*70)
-        print("\nThis program contains 3 consecutive exercises for practicing")
-        print("matplotlib.pyplot subplots. Complete each exercise step by step.\n")
-        
-        input("Press Enter to start...")
-        
-        # Statistics tracking
-        completed_count = 0
-        not_completed_count = 0
-        
-        for i, exercise in enumerate(self.exercises):
-            is_last = (i == len(self.exercises) - 1)
-            completed = self.run_exercise(exercise, is_last)
-            if completed:
-                completed_count += 1
-            else:
-                not_completed_count += 1
-                if is_last:
-                    # Last exercise was skipped, terminate
-                    break
-                # Continue to next exercise
-                continue
-        
-        # Calculate statistics
-        total = completed_count + not_completed_count
-        completed_pct = (completed_count / total * 100) if total > 0 else 0
-        not_completed_pct = (not_completed_count / total * 100) if total > 0 else 0
-        
-        # Display statistics
-        print("\n" + "="*70)
-        print("EXERCISE SEQUENCE STATISTICS")
-        print("="*70)
-        print(f"\nCompleted successfully: {completed_count} ({completed_pct:.1f}%)")
-        print(f"Not completed: {not_completed_count} ({not_completed_pct:.1f}%)")
-        print(f"Total exercises: {total}")
-        print("\n" + "="*70)
+        print_sequence_intro(
+            "MATPLOTLIB PYPLOT PRACTICE - SUBPLOT EXERCISES",
+            "This program contains 3 consecutive exercises for practicing\n"
+            "matplotlib.pyplot subplots. Complete each exercise step by step.",
+        )
+        run_exercise_sequence(self.exercises, self.run_exercise)
 

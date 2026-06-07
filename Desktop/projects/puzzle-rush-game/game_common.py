@@ -1,7 +1,57 @@
 """Shared low-risk gameplay helpers for puzzle-rush-game."""
 
 from __future__ import annotations
+
 import random
+from typing import Callable, Sequence
+
+from code_validators import validate_code_answer
+
+ChallengeFactory = Callable[[str], dict]
+
+
+def show_hint(challenge: dict) -> None:
+    """Display a hint for the current challenge."""
+    print(f"Hint: {challenge['hint']}")
+
+
+def make_code_validator(profile: str) -> Callable[[str, str], bool]:
+    """Return a code-answer checker bound to a ``code_validators`` profile."""
+
+    def validate(user_input: str, correct_answer: str) -> bool:
+        return validate_code_answer(user_input, correct_answer, profile=profile)
+
+    return validate
+
+
+def build_challenge_sequence(
+    code_generators: Sequence[ChallengeFactory],
+    true_false_factory: ChallengeFactory,
+    *,
+    code_count: int,
+    tf_count: int,
+    used_questions: set[str],
+    mandatory_first: ChallengeFactory | None = None,
+) -> list[ChallengeFactory]:
+    """
+    Build a shuffled list of challenge callables for one session.
+
+    When ``mandatory_first`` is set (Array Blitz shape rule), it occupies one code slot
+    and the remaining slots are filled from ``code_generators``.
+    """
+    if mandatory_first is not None:
+        challenge_sequence: list[ChallengeFactory] = [mandatory_first]
+        for _ in range(code_count - 1):
+            challenge_sequence.append(random.choice(code_generators))
+    else:
+        challenge_sequence = [random.choice(code_generators) for _ in range(code_count)]
+
+    for _ in range(tf_count):
+        challenge_sequence.append(
+            lambda d, u=used_questions, tf=true_false_factory: tf(d, used_questions=u)
+        )
+    random.shuffle(challenge_sequence)
+    return challenge_sequence
 
 
 # Exact spellings accepted for difficulty (case-sensitive on words; see prompt_difficulty).

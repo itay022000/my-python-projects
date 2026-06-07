@@ -46,16 +46,6 @@ def prompt_label_batch2(exercise: dict) -> str:
     return "Your answer" if exercise.get("answer_type") == "word" else "Your code"
 
 
-def print_session_statistics(completed: int, not_completed: int) -> None:
-    """Alias for :func:`print_session_footer` (flat exercise sessions)."""
-    print_session_footer(completed, not_completed)
-
-
-def print_unit_session_statistics(units_passed: int, units_failed: int) -> None:
-    """Alias for :func:`print_session_footer` (mixed-unit sessions)."""
-    print_session_footer(units_passed, units_failed)
-
-
 def _run_one_simple_exercise(
     exercise: dict,
     num: int,
@@ -139,30 +129,15 @@ def _run_simple_unit(
     max_mistakes: int,
     input_fn: Callable[[str], str],
 ) -> bool:
-    mistakes = 0
-    print(f"\n--- Question {num}/{total} ---")
-    print(unit["question"])
-    while True:
-        try:
-            user_input = input_fn(
-                f"   Your code (attempt {mistakes + 1}/{max_mistakes}): "
-            ).strip()
-        except (EOFError, KeyboardInterrupt):
-            return False
-        correct, message = unit["check"](user_input)
-        if correct:
-            print(f"   ✓ {message}\n")
-            return True
-        print(f"   ✗ {message}")
-        mistakes += 1
-        if mistakes >= max_mistakes:
-            print(f"\n   Correct answer: {unit['expected']}")
-            if is_last:
-                print("\n⚠️  Three mistakes. Ending session.\n")
-            else:
-                print("\n⚠️  Three mistakes. Skipping to next question.\n")
-            return False
-        print("   Try again...\n")
+    return _run_one_simple_exercise(
+        unit,
+        num,
+        total,
+        is_last,
+        max_mistakes=max_mistakes,
+        prompt_label="Your code",
+        input_fn=input_fn,
+    )
 
 
 def _run_compound_unit(

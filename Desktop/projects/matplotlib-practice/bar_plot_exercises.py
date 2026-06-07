@@ -6,6 +6,15 @@ Handles all bar plot exercise generation, verification, and execution.
 import random
 import re
 
+from exercise_common import (
+    DEFAULT_COLORS,
+    normalize_code,
+    print_sequence_intro,
+    run_exercise_sequence,
+    verify_step_show,
+)
+
+
 class BarPlotExercises:
     """
     Class for handling bar plot exercises.
@@ -17,11 +26,7 @@ class BarPlotExercises:
             "ford", "chevrolet", "volkswagen", "porsche", "ferrari",
             "lamborghini", "tesla", "nissan", "lexus", "mazda"
         ]
-        self.colors_list = [
-            "red", "blue", "green", "yellow", "orange", "purple", "pink",
-            "magenta", "cyan", "brown", "black", "gray", "olive", "lime",
-            "navy", "coral", "teal", "gold", "silver", "indigo", "violet"
-        ]
+        self.colors_list = DEFAULT_COLORS
         self.exercises = []
         self.generate_exercises()
     
@@ -69,20 +74,10 @@ class BarPlotExercises:
             }
             self.exercises.append(exercise)
     
-    def normalize_code(self, code):
-        """Normalize code string for comparison (remove extra whitespace)."""
-        # Remove leading/trailing whitespace
-        code = code.strip()
-        # Normalize multiple spaces to single space
-        code = re.sub(r'\s+', ' ', code)
-        # Normalize spaces around operators and parentheses
-        code = re.sub(r'\s*([=\[\]\(\)])\s*', r'\1', code)
-        code = re.sub(r'=\s*', '=', code)
-        return code.strip()
     
     def verify_step1(self, user_input, labels):
         """Verify Step 1: labels array with capital letters."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'x\s*=', normalized_input, re.IGNORECASE):
@@ -112,7 +107,7 @@ class BarPlotExercises:
     
     def verify_step2(self, user_input, heights):
         """Verify Step 2: heights array with integers."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'y\s*=', normalized_input, re.IGNORECASE):
@@ -143,7 +138,7 @@ class BarPlotExercises:
     
     def verify_step3(self, user_input, has_width, width, is_horizontal, color, height):
         """Verify Step 3: plt.bar() or plt.barh() call with optional parameters."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         if is_horizontal:
             # Exercise 3: horizontal bar with color and height
@@ -237,15 +232,6 @@ class BarPlotExercises:
         
         return True, "Correct!"
     
-    def verify_step_show(self, user_input):
-        """Verify final step: plt.show()."""
-        normalized_input = self.normalize_code(user_input)
-        
-        # Must be exactly plt.show() - no parameters
-        if normalized_input.lower() != 'plt.show()':
-            return False, "Invalid format"
-        
-        return True, "Correct!"
     
     def run_exercise(self, exercise, is_last):
         """Run a single bar plot exercise. Returns True if completed, False if skipped."""
@@ -344,7 +330,7 @@ class BarPlotExercises:
         print("STEP 4: Show the plot")
         while True:
             user_input = input("   Your code: ").strip()
-            correct, message = self.verify_step_show(user_input)
+            correct, message = verify_step_show(user_input)
             if correct:
                 print(f"   ✓ {message}\n")
                 break
@@ -364,42 +350,10 @@ class BarPlotExercises:
     
     def start_exercises(self):
         """Start the bar plot exercises sequence."""
-        print("="*70)
-        print("MATPLOTLIB PYPLOT PRACTICE - BAR PLOT EXERCISES")
-        print("="*70)
-        print("\nThis program contains 3 consecutive exercises for practicing")
-        print("matplotlib.pyplot bar plots. Complete each exercise step by step.\n")
-        
-        input("Press Enter to start...")
-        
-        # Statistics tracking
-        completed_count = 0
-        not_completed_count = 0
-        
-        for i, exercise in enumerate(self.exercises):
-            is_last = (i == len(self.exercises) - 1)
-            completed = self.run_exercise(exercise, is_last)
-            if completed:
-                completed_count += 1
-            else:
-                not_completed_count += 1
-                if is_last:
-                    # Last exercise was skipped, terminate
-                    break
-                # Continue to next exercise
-                continue
-        
-        # Calculate statistics
-        total = completed_count + not_completed_count
-        completed_pct = (completed_count / total * 100) if total > 0 else 0
-        not_completed_pct = (not_completed_count / total * 100) if total > 0 else 0
-        
-        # Display statistics
-        print("\n" + "="*70)
-        print("EXERCISE SEQUENCE STATISTICS")
-        print("="*70)
-        print(f"\nCompleted successfully: {completed_count} ({completed_pct:.1f}%)")
-        print(f"Not completed: {not_completed_count} ({not_completed_pct:.1f}%)")
-        print(f"Total exercises: {total}")
-        print("\n" + "="*70)
+        print_sequence_intro(
+            "MATPLOTLIB PYPLOT PRACTICE - BAR PLOT EXERCISES",
+            "This program contains 3 consecutive exercises for practicing\n"
+            "matplotlib.pyplot bar plots. Complete each exercise step by step.",
+        )
+        run_exercise_sequence(self.exercises, self.run_exercise)
 

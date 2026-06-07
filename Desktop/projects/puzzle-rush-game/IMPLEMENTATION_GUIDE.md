@@ -1,5 +1,11 @@
 # Puzzle Rush Game - Implementation Guide
 
+> **Archived (B005):** Historical build-from-scratch notes from early development.  
+> Shipped games use **string code answers** (not NumPy array objects), shared validators in `code_validators.py`, and `engine.run_standard_game` / `run_game_session`.  
+> **Maintainers:** use `README.md` and the on-disk modules only.
+
+---
+
 ## Overview
 
 This guide provides step-by-step instructions for implementing each NumPy game. Each game focuses on different NumPy concepts you've learned.

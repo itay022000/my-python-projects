@@ -5,43 +5,13 @@ Same rules as other batches: space normalization, 3 attempts, no overly explicit
 """
 
 import random
-import re
 
+from exercise_checks import checker_lists
 from session_runner import print_session_footer, print_session_header, run_simple_exercises
 
-
-# ---------------------------------------------------------------------------
-# Exact-answer verification
-# ---------------------------------------------------------------------------
-
-def _normalize_code(code):
-    """Normalize code string for comparison. Used for every question."""
-    if not code:
-        return ""
-    code = code.strip()
-    code = re.sub(r"\s+", " ", code)
-    code = re.sub(r"\s*([=\[\]\(\):,])\s*", r"\1", code)
-    code = re.sub(r"=\s*", "=", code)
-    code = re.sub(r"\s*,\s*", ",", code)
-    code = re.sub(r"\s*([*+/])\s*", r"\1", code)
-    code = re.sub(r"\s*-\s*", "-", code)
-    return code.strip()
-
-
-def _make_exact_check(expected_code):
-    expected_normalized = _normalize_code(expected_code)
-
-    def check(user_code):
-        user_normalized = _normalize_code(user_code)
-        if user_normalized == expected_normalized:
-            return True, "Correct!"
-        return False, "That is not the expected answer. Only the exact required line is accepted."
-
-    return check
-
-
-def _make_exercise(question, expected):
-    return {"question": question, "expected": expected, "check": _make_exact_check(expected)}
+# Shared exact-answer verification (same behavior as before; see exercise_checks.py).
+_normalize_code = checker_lists.normalize
+_make_exercise = checker_lists.make_exercise
 
 
 # ---------------------------------------------------------------------------

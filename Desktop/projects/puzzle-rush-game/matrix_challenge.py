@@ -1,7 +1,6 @@
 import numpy as np
 import random
-from code_validators import validate_code_answer as shared_validate_code_answer
-from engine import run_game_session, run_with_replay
+from engine import run_standard_game, run_with_replay
 from game_common import pick_true_false_statement
 
 """
@@ -567,45 +566,23 @@ def generate_true_false_challenge(difficulty="easy", *, used_questions=None):
     return {"type": "true_false", "question": question, "answer": answer, "hint": hint}
 
 
-def validate_code_answer(user_input, correct_answer):
-    """Validate user's code answer using shared matrix profile."""
-    return shared_validate_code_answer(user_input, correct_answer, profile="matrix")
-
-
-def show_hint(challenge):
-    """Display a hint for the current challenge."""
-    print(f"Hint: {challenge['hint']}")
-
-
 def play_game():
     """Run a single game session."""
-
-    challenge_functions = [
-        generate_create_matrix_challenge,
-        generate_matrix_math_challenge,
-        generate_transpose_challenge,
-        generate_matrix_shape_challenge,
-        generate_reshape_matrix_challenge,
-        generate_matrix_properties_challenge,
-    ]
-
-    def build_sequence(_difficulty, code_count, tf_count, used_questions):
-        challenge_sequence = [random.choice(challenge_functions) for _ in range(code_count)]
-        for _ in range(tf_count):
-            challenge_sequence.append(
-                lambda d, u=used_questions: generate_true_false_challenge(d, used_questions=u)
-            )
-        random.shuffle(challenge_sequence)
-        return challenge_sequence
-
-    run_game_session(
+    run_standard_game(
         game_name="Matrix Challenge",
         subtitle="Master NumPy matrix operations!",
         perfect_message="Perfect score! You're a matrix master! 🎉",
         thank_you_message="Thank you for playing Matrix Challenge!",
-        code_validator=validate_code_answer,
-        sequence_builder=build_sequence,
-        show_hint=show_hint,
+        validator_profile="matrix",
+        code_generators=[
+            generate_create_matrix_challenge,
+            generate_matrix_math_challenge,
+            generate_transpose_challenge,
+            generate_matrix_shape_challenge,
+            generate_reshape_matrix_challenge,
+            generate_matrix_properties_challenge,
+        ],
+        true_false_factory=generate_true_false_challenge,
     )
 
 

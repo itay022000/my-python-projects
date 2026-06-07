@@ -1,78 +1,100 @@
-# Matplotlib Pyplot Practice - Pie Chart Exercises
+# Matplotlib Pyplot Practice
 
-An interactive learning tool for practicing matplotlib.pyplot pie charts in Python.
+An interactive command-line program for practicing **matplotlib.pyplot** across six exercise sequences: line plots, subplots, scatter plots, bar plots, histograms, and pie charts.
 
 ## Description
 
-This program provides 10 consecutive exercises for practicing pie chart creation using matplotlib.pyplot. Each exercise walks you through creating a pie chart step by step, with random attributes selected from predefined lists.
+Run `main.py` to open a main menu. Each sequence contains **3 consecutive exercises** (pie chart sequence: 3 exercises). Every exercise guides you step by step; you type Python/matplotlib code for each step. The program uses **exact matching** — only the precisely expected answer is accepted before you move on.
 
-## Features
+After a sequence, you see completion statistics (wording differs slightly for the plot sequence footer; behavior is the same idea).
 
-- **10 Pie Chart Exercises**: Each exercise creates a pie chart with 5 wedges
-- **Step-by-Step Learning**: Exercises are broken down into clear steps:
-  1. Define proportions array using `np.array`
-  2. Define colors array using `np.array` (color names as strings)
-  3. Define labels array using `np.array`
-  4. Create the pie chart using `plt.pie()`
-  5. Add legend (when required) using `plt.legend()`
-- **Random Attributes**: Each exercise has randomly generated:
-  - Proportions (5 values that sum to 100%)
-  - Colors (from a predefined list of color names)
-  - Labels (LabelA, LabelB, etc.)
-- **Special Requirements**:
-  - At least 2 exercises require `shadow=True`
-  - At least 2 exercises require `plt.legend()`
-- **Exact Verification**: Only the exact correct answer is accepted for each step
+## Main menu
+
+| Option | Sequence |
+|--------|----------|
+| 1 | Plot (line) exercises |
+| 2 | Subplot exercises |
+| 3 | Scatter plot exercises |
+| 4 | Bar plot exercises |
+| 5 | Histogram exercises |
+| 6 | Pie chart exercises |
+| 7 | Exit (or type `exit`) |
+
+## Features (all sequences)
+
+- **Step-by-step prompts** with clear variable-name rules per step
+- **Random exercise data** generated when each module loads (counts and rules are fixed per sequence type)
+- **Three-strike rule**: three wrong attempts on a step skips the current exercise (or ends the sequence on the last exercise, depending on step and module — pie chart early steps always skip to the next exercise)
+- **Exact verification** of code strings (whitespace normalized; no alternate spellings)
+- **Shared internals**: common helpers live in `exercise_common.py` (normalization, `plt.show()` check, sequence statistics for most modules)
+
+## Sequence overview
+
+| Module | Topic | Exercises | Notes |
+|--------|-------|-----------|--------|
+| `plot_exercises.py` | Line plots, labels, grid | 3 | Three variants: multi-line styling, titled axes, grid |
+| `subplot_exercises.py` | `plt.subplot`, titles | 3 | 1×2 or 2×1 layouts; optional suptitle |
+| `scatter_plot_exercises.py` | `plt.scatter` | 3 | Color arrays, sizes, numeric colors |
+| `bar_plot_exercises.py` | `plt.bar` / `plt.barh` | 3 | Vertical bars, width, horizontal bars |
+| `histogram_exercises.py` | `plt.hist` | 3 | `np.random.normal` then histogram |
+| `pie_chart_exercises.py` | `plt.pie` | 3 | Proportions, colors, labels; optional explode, shadow, legend |
 
 ## Requirements
 
-- Python 3.6+
-- numpy >= 1.20.0
-- matplotlib >= 3.3.0
+- **Python 3.10+** recommended (verified on 3.10.9 for maintenance brief B001)
+- `numpy >= 1.20.0`
+- `matplotlib >= 3.3.0`
+
+See `requirements.txt`.
 
 ## Installation
 
-1. Install the required dependencies:
 ```bash
+cd matplotlib-practice
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-Run the program:
 ```bash
-python main.py
+python3 main.py
 ```
 
-The program will:
-1. Display 10 consecutive exercises
-2. For each exercise, present the requirements (proportions, colors, labels, and special attributes)
-3. Guide you through each step
-4. Verify your code input for each step
-5. Only accept the exact correct answer before proceeding
+1. Choose a sequence (1–6) or exit (7 / `exit`).
+2. Press Enter at the sequence intro.
+3. Complete each exercise step; re-enter code after feedback until correct or three mistakes on that step.
+4. View statistics at the end of the sequence (plot sequence uses the heading `EXERCISES SEQUENCE STATISTICS`).
 
-## Example Exercise Flow
+## Verification rules (learners)
 
+- Type answers as instructed (exact variable names: e.g. pie chart uses `x`, `c`, `lb`, `ex` where specified).
+- Colors in arrays are **color name strings** (e.g. `"red"`), not RGB tuples, unless the step says otherwise.
+- Only the shown correct pattern is accepted; extra spaces are normalized, but wrong names or values are rejected.
+
+## Project layout
+
+```text
+main.py                 # Main menu
+exercise_common.py      # Shared verification and CLI helpers
+plot_exercises.py
+subplot_exercises.py
+scatter_plot_exercises.py
+bar_plot_exercises.py
+histogram_exercises.py
+pie_chart_exercises.py
+requirements.txt
+scripts/qa_regression_b001.py   # QA validator regression (228 checks)
 ```
-EXERCISE 1: Pie Chart
-======================================================================
 
-Create a pie chart with the following specifications:
-- 5 wedges with proportions: [30, 10, 15, 40, 5]%
-- Colors for each wedge: ['red', 'blue', 'green', 'yellow', 'orange']
-- Labels for each wedge: ['LabelA', 'LabelB', 'LabelC', 'LabelD', 'LabelE']
-- The pie chart must have a shadow effect
+## Development / QA
 
-You need to complete the following steps:
+Regression check for validators (does not replace learner-facing manual practice):
 
-STEP 1: Define the proportions array
-   Example: proportions = np.array([30, 10, 15, 40, 5])
-   Your code: ...
+```bash
+python3 scripts/qa_regression_b001.py
+python3 scripts/qa_flow_three_strike_b001.py   # 62 checks: 3-strike on all 18 exercises
 ```
 
-## Notes
+## License / origin
 
-- Colors must be specified as words (e.g., "red", "blue", "magenta") - no shorthand letters or RGB codes
-- Each step must match the exact format expected
-- The program uses exact matching for verification to ensure correct learning
-
+Practice project for learning matplotlib pyplot interactively in the terminal.

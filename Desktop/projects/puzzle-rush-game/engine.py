@@ -8,9 +8,13 @@ from game_common import (
     EXIT_ROUND_KEYWORDS,
     REPLAY_EXIT,
     REPLAY_KEEP,
+    ChallengeFactory,
+    build_challenge_sequence,
     get_challenge_counts,
+    make_code_validator,
     normalize_true_false_answer,
     prompt_difficulty,
+    show_hint,
 )
 
 
@@ -51,6 +55,7 @@ def run_game_session(
 
         challenge_func = challenge_sequence[i]
         challenge = None
+        # After _MAX_UNIQUE_GENERATION_ATTEMPTS, accept a duplicate question rather than abort.
         for _ in range(_MAX_UNIQUE_GENERATION_ATTEMPTS):
             candidate = challenge_func(difficulty)
             if candidate["question"] not in seen_questions:
@@ -102,6 +107,40 @@ def run_game_session(
         print("Keep practicing! You'll get better! 💪")
 
     print(f"\n{thank_you_message}")
+
+
+def run_standard_game(
+    *,
+    game_name: str,
+    subtitle: str,
+    perfect_message: str,
+    thank_you_message: str,
+    validator_profile: str,
+    code_generators: list[ChallengeFactory],
+    true_false_factory: ChallengeFactory,
+    mandatory_first: ChallengeFactory | None = None,
+) -> None:
+    """Run one session using shared sequence wiring and validator profile."""
+
+    def build_sequence(_difficulty: str, code_count: int, tf_count: int, used_questions: set[str]):
+        return build_challenge_sequence(
+            code_generators,
+            true_false_factory,
+            code_count=code_count,
+            tf_count=tf_count,
+            used_questions=used_questions,
+            mandatory_first=mandatory_first,
+        )
+
+    run_game_session(
+        game_name=game_name,
+        subtitle=subtitle,
+        perfect_message=perfect_message,
+        thank_you_message=thank_you_message,
+        code_validator=make_code_validator(validator_profile),
+        sequence_builder=build_sequence,
+        show_hint=show_hint,
+    )
 
 
 def run_with_replay(play_once: Callable[[], None]) -> None:

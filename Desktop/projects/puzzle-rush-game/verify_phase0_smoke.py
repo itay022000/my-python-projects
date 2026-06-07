@@ -6,6 +6,7 @@ Checks:
 2) Generator smoke for all generate_*_challenge callables (easy/medium/hard).
 3) Quick CLI entrypoint smoke for each game script.
 4) Guard that play_game references generate_true_false_challenge.
+5) Array Blitz hard-mode negative slice edge case (stop at array end).
 
 Run from this directory:
   python3 verify_phase0_smoke.py
@@ -16,12 +17,15 @@ from __future__ import annotations
 import ast
 import importlib
 import inspect
+import random
 import signal
 import sys
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
+
+import numpy as np
 
 
 MODULE_NAMES = [
@@ -131,6 +135,30 @@ def _run_true_false_guard(modules: dict[str, object]) -> None:
     assert not failures, "\n".join(failures)
 
 
+def _run_array_blitz_hard_slice_probe() -> None:
+    """
+    Regression guard for hard-mode negative-index slices.
+
+    When stop == len(array), the old code called randint(1, 0) and raised ValueError.
+    """
+    import array_blitz as ab
+
+    for seed in range(500):
+        random.seed(seed)
+        challenge = ab.generate_slice_challenge("hard")
+        _assert_challenge_shape("array_blitz", "generate_slice_challenge", challenge)
+
+    # Force negative-index branch with stop at the end of the array (span == 0).
+    with patch.object(ab.random, "randint", side_effect=[20, 2, 20]):
+        with patch.object(ab.np.random, "randint", return_value=np.zeros(20, dtype=int)):
+            with patch.object(ab.random, "choice", side_effect=[1, False]):
+                challenge = ab.generate_slice_challenge("hard")
+
+    _assert_challenge_shape("array_blitz", "generate_slice_challenge", challenge)
+    assert challenge["answer"] == "array[2:-1]"
+    assert "negative index" in challenge["question"]
+
+
 def main() -> None:
     project_dir = Path(__file__).resolve().parent
     sys.path.insert(0, str(project_dir))
@@ -143,8 +171,13 @@ def main() -> None:
     _run_cli_smoke(modules)
     print("phase0: true/false scheduling guard...", flush=True)
     _run_true_false_guard(modules)
+    print("phase0: array blitz hard slice probe...", flush=True)
+    _run_array_blitz_hard_slice_probe()
 
-    print("verify_phase0_smoke: OK (imports + generators + CLI smoke + T/F scheduling guard).")
+    print(
+        "verify_phase0_smoke: OK "
+        "(imports + generators + CLI smoke + T/F scheduling guard + hard slice probe)."
+    )
 
 
 if __name__ == "__main__":

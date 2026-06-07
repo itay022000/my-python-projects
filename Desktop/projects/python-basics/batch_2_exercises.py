@@ -15,7 +15,6 @@ from session_runner import print_session_footer, print_session_header, prompt_la
 
 # Shared exact-answer verification (same behavior as before; see exercise_checks.py).
 _normalize_code = checker_basic.normalize
-_make_exact_check = checker_basic.make_exact_check
 _make_exercise = checker_basic.make_exercise
 _make_boolean_word_check = make_boolean_word_check
 

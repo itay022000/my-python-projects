@@ -1,7 +1,6 @@
 import numpy as np
 import random
-from code_validators import validate_code_answer as shared_validate_code_answer
-from engine import run_game_session, run_with_replay
+from engine import run_standard_game, run_with_replay
 from game_common import pick_true_false_statement
 
 """
@@ -13,7 +12,7 @@ This game challenges you to:
 - Transform arrays (reshape, join, split)
 - Search and sort arrays
 - Filter arrays
-"""     
+"""
 
 def generate_create_challenge(difficulty="easy"):
     if difficulty == "easy":
@@ -113,7 +112,11 @@ def generate_slice_challenge(difficulty="easy"):
             hint = "The middle number determines where to stop, but doesn't include that element"
         else:
             # Negative indexing
-            neg_stop = -random.randint(1, len(array) - stop)
+            span = len(array) - stop
+            if span <= 0:
+                neg_stop = -1
+            else:
+                neg_stop = -random.randint(1, span)
             question = f"Given: array = {array}\nWrite the code to slice it from index {start} to {neg_stop} (using negative index)"
             answer = f"array[{start}:{neg_stop}]"  # Code as answer
             hint = "What happens when you use negative numbers as indices?"
@@ -521,58 +524,33 @@ def generate_true_false_challenge(difficulty="easy", *, used_questions=None):
     return {"type": "true_false", "question": question, "answer": answer, "hint": hint}
 
 
-def validate_code_answer(user_input, correct_answer):
-    """Validate user's code answer using shared default profile."""
-    return shared_validate_code_answer(user_input, correct_answer, profile="default")
-
-
-def show_hint(challenge):
-    print(f"Hint: {challenge['hint']}")
-
-
 def play_game():
     """Run a single game session."""
-
-    # Challenge functions (excluding shape - it will be added once).
-    other_challenge_functions = [
-        generate_create_challenge,
-        generate_reshape_challenge,
-        generate_slice_challenge,
-        generate_filter_challenge,
-        generate_sum_challenge,
-        generate_search_challenge,
-        generate_concatenate_challenge,
-        generate_array_creation_challenge,
-        generate_copy_view_challenge,
-        generate_indexing_challenge,
-        generate_join_challenge,
-        generate_split_challenge,
-        generate_sort_challenge,
-        generate_permutation_challenge,
-    ]
-
-    def build_sequence(_difficulty, code_count, tf_count, used_questions):
-        # Ensure shape appears exactly once each session.
-        challenge_sequence = [generate_shape_challenge]
-        remaining_code_slots = code_count - 1
-        for _ in range(remaining_code_slots):
-            challenge_sequence.append(random.choice(other_challenge_functions))
-        for _ in range(tf_count):
-            challenge_sequence.append(
-                lambda d, u=used_questions: generate_true_false_challenge(d, used_questions=u)
-            )
-        random.shuffle(challenge_sequence)
-        return challenge_sequence
-
-    run_game_session(
+    run_standard_game(
         game_name="Array Blitz",
         subtitle="The game that will test your manipulation skills... On arrays, of course :)\n"
         "Test your NumPy array manipulation skills!",
         perfect_message="Perfect score! You're an array master! 🎉",
         thank_you_message="Thank you for playing Array Blitz!",
-        code_validator=validate_code_answer,
-        sequence_builder=build_sequence,
-        show_hint=show_hint,
+        validator_profile="default",
+        mandatory_first=generate_shape_challenge,
+        code_generators=[
+            generate_create_challenge,
+            generate_reshape_challenge,
+            generate_slice_challenge,
+            generate_filter_challenge,
+            generate_sum_challenge,
+            generate_search_challenge,
+            generate_concatenate_challenge,
+            generate_array_creation_challenge,
+            generate_copy_view_challenge,
+            generate_indexing_challenge,
+            generate_join_challenge,
+            generate_split_challenge,
+            generate_sort_challenge,
+            generate_permutation_challenge,
+        ],
+        true_false_factory=generate_true_false_challenge,
     )
 
 

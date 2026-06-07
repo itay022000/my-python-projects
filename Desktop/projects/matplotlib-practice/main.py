@@ -1,6 +1,7 @@
 """
 Matplotlib Pyplot Practice
-Interactive practice program for learning matplotlib.pyplot with pie charts and histograms.
+Interactive CLI for learning matplotlib.pyplot (plot, subplot, scatter, bar,
+histogram, and pie chart exercise sequences).
 """
 
 from subplot_exercises import SubplotExercises

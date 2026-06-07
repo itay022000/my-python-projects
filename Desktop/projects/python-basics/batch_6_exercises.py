@@ -15,7 +15,6 @@ from session_runner import print_session_footer, print_session_header, run_simpl
 
 # Shared exact-answer verification (same behavior as before; see exercise_checks.py).
 _normalize_code = checker_sets.normalize
-_make_exact_check = checker_sets.make_exact_check
 _make_exercise = checker_sets.make_exercise
 
 

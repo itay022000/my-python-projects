@@ -15,7 +15,7 @@ from exercises import (
 )
 
 # Shown when user selects menu option 0
-LAST_UPDATED = "2026-05-12 00:05:54"
+LAST_UPDATED = "2026-06-06 23:47:31"
 
 
 def show_menu():
@@ -38,7 +38,7 @@ def main():
     """Main program loop."""
     while True:
         show_menu()
-        choice = input("Select an option: ").strip()
+        choice = input("Select an option (0-7): ").strip()
 
         if choice == "1":
             exercise_constants()

@@ -6,17 +6,22 @@ Handles all scatter plot exercise generation, verification, and execution.
 import random
 import re
 
+from exercise_common import (
+    DEFAULT_COLORS,
+    normalize_code,
+    print_sequence_intro,
+    run_exercise_sequence,
+    verify_step_show,
+)
+
+
 class ScatterPlotExercises:
     """
     Class for handling scatter plot exercises.
     """
     
     def __init__(self):
-        self.colors_list = [
-            "red", "blue", "green", "yellow", "orange", "purple", "pink",
-            "magenta", "cyan", "brown", "black", "gray", "olive", "lime",
-            "navy", "coral", "teal", "gold", "silver", "indigo", "violet"
-        ]
+        self.colors_list = DEFAULT_COLORS
         self.colormaps = [
             "Reds", "Greens", "Blues", "hot", "ocean",
             "spring", "summer", "winter", "viridis", "nipy_spectral"
@@ -86,20 +91,10 @@ class ScatterPlotExercises:
             
             self.exercises.append(exercise)
     
-    def normalize_code(self, code):
-        """Normalize code string for comparison (remove extra whitespace)."""
-        # Remove leading/trailing whitespace
-        code = code.strip()
-        # Normalize multiple spaces to single space
-        code = re.sub(r'\s+', ' ', code)
-        # Normalize spaces around operators and parentheses
-        code = re.sub(r'\s*([=\[\]\(\)])\s*', r'\1', code)
-        code = re.sub(r'=\s*', '=', code)
-        return code.strip()
     
     def verify_step1(self, user_input, x_coords):
         """Verify Step 1: x coordinates array."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'x\s*=', normalized_input, re.IGNORECASE):
@@ -130,7 +125,7 @@ class ScatterPlotExercises:
     
     def verify_step2(self, user_input, y_coords):
         """Verify Step 2: y coordinates array."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'y\s*=', normalized_input, re.IGNORECASE):
@@ -161,7 +156,7 @@ class ScatterPlotExercises:
     
     def verify_step3_colors_array(self, user_input, colors_array):
         """Verify Step 3 (Exercise 2): colors array with color names."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'colors\s*=', normalized_input, re.IGNORECASE):
@@ -190,7 +185,7 @@ class ScatterPlotExercises:
     
     def verify_step3_colors_numeric(self, user_input, colors_array):
         """Verify Step 3 (Exercise 3): colors array with numeric values."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'colors\s*=', normalized_input, re.IGNORECASE):
@@ -221,7 +216,7 @@ class ScatterPlotExercises:
     
     def verify_step4_sizes(self, user_input, sizes_array):
         """Verify Step 4: sizes array."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'sizes\s*=', normalized_input, re.IGNORECASE):
@@ -252,7 +247,7 @@ class ScatterPlotExercises:
     
     def verify_step_plot(self, user_input, exercise):
         """Verify plotting step: plt.scatter() call with various parameters."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.scatter (not plt.scatters, etc.)
         if not re.search(r'\bplt\.scatter\s*\(', normalized_input, re.IGNORECASE):
@@ -321,15 +316,6 @@ class ScatterPlotExercises:
         
         return True, "Correct!"
     
-    def verify_step_show(self, user_input):
-        """Verify final step: plt.show()."""
-        normalized_input = self.normalize_code(user_input)
-        
-        # Must be exactly plt.show() - no parameters
-        if normalized_input.lower() != 'plt.show()':
-            return False, "Invalid format"
-        
-        return True, "Correct!"
     
     def run_exercise(self, exercise, is_last):
         """Run a single scatter plot exercise. Returns True if completed, False if skipped."""
@@ -520,7 +506,7 @@ class ScatterPlotExercises:
         print(f"STEP {show_step}: Show the plot")
         while True:
             user_input = input("   Your code: ").strip()
-            correct, message = self.verify_step_show(user_input)
+            correct, message = verify_step_show(user_input)
             if correct:
                 print(f"   ✓ {message}\n")
                 break
@@ -540,41 +526,9 @@ class ScatterPlotExercises:
     
     def start_exercises(self):
         """Start the scatter plot exercises sequence."""
-        print("="*70)
-        print("MATPLOTLIB PYPLOT PRACTICE - SCATTER PLOT EXERCISES")
-        print("="*70)
-        print("\nThis program contains 3 consecutive exercises for practicing")
-        print("matplotlib.pyplot scatter plots. Complete each exercise step by step.\n")
-        
-        input("Press Enter to start...")
-        
-        # Statistics tracking
-        completed_count = 0
-        not_completed_count = 0
-        
-        for i, exercise in enumerate(self.exercises):
-            is_last = (i == len(self.exercises) - 1)
-            completed = self.run_exercise(exercise, is_last)
-            if completed:
-                completed_count += 1
-            else:
-                not_completed_count += 1
-                if is_last:
-                    # Last exercise was skipped, terminate
-                    break
-                # Continue to next exercise
-                continue
-        
-        # Calculate statistics
-        total = completed_count + not_completed_count
-        completed_pct = (completed_count / total * 100) if total > 0 else 0
-        not_completed_pct = (not_completed_count / total * 100) if total > 0 else 0
-        
-        # Display statistics
-        print("\n" + "="*70)
-        print("EXERCISE SEQUENCE STATISTICS")
-        print("="*70)
-        print(f"\nCompleted successfully: {completed_count} ({completed_pct:.1f}%)")
-        print(f"Not completed: {not_completed_count} ({not_completed_pct:.1f}%)")
-        print(f"Total exercises: {total}")
-        print("\n" + "="*70)
+        print_sequence_intro(
+            "MATPLOTLIB PYPLOT PRACTICE - SCATTER PLOT EXERCISES",
+            "This program contains 3 consecutive exercises for practicing\n"
+            "matplotlib.pyplot scatter plots. Complete each exercise step by step.",
+        )
+        run_exercise_sequence(self.exercises, self.run_exercise)

@@ -23,6 +23,15 @@ EXERCISE_TITLES = {
     "exercise_interpolate": "6. Interpolation Exercise",
 }
 
+BUILDER_ORDER = [
+    ("constants", "1. Constants Exercise"),
+    ("optimize", "2. Optimization Exercise"),
+    ("sparse", "3. Sparse Matrices Exercise"),
+    ("csgraph", "4. CSGraph Exercise"),
+    ("spatial", "5. Spatial Data Exercise"),
+    ("interpolate", "6. Interpolation Exercise"),
+]
+
 
 class AnswerQuestion(NamedTuple):
     text: str
@@ -73,27 +82,29 @@ def extract_question(call: ast.Call) -> Optional[AnswerQuestion]:
     return AnswerQuestion(text=text, reference_answer=reference_answer)
 
 
-def extract_answers(source: str) -> List[ExerciseAnswers]:
-    """Extract ordered exercise question/answer data from exercises.py source."""
-    tree = ast.parse(source)
-    sections = []
+def extract_answers_from_builders() -> List[ExerciseAnswers]:
+    """Extract question/answer data from PRACTICE_BUILDERS (source of truth)."""
+    from exercises import PRACTICE_BUILDERS
 
-    for node in tree.body:
-        if not isinstance(node, ast.FunctionDef):
-            continue
-        if node.name not in EXERCISE_TITLES:
-            continue
-
-        questions = []
-        for child in ast.walk(node):
-            if isinstance(child, ast.Call):
-                question = extract_question(child)
-                if question is not None:
-                    questions.append(question)
-
-        sections.append(ExerciseAnswers(title=EXERCISE_TITLES[node.name], questions=questions))
-
+    sections: List[ExerciseAnswers] = []
+    for key, title in BUILDER_ORDER:
+        _namespace, questions = PRACTICE_BUILDERS[key]()
+        sections.append(
+            ExerciseAnswers(
+                title=title,
+                questions=[
+                    AnswerQuestion(text=q.text, reference_answer=q.reference_answer or "")
+                    for q in questions
+                ],
+            )
+        )
     return sections
+
+
+def extract_answers(source: str) -> List[ExerciseAnswers]:
+    """Extract ordered exercise question/answer data from exercises.py source (legacy AST)."""
+    del source  # builders are authoritative; AST path kept for compatibility tooling
+    return extract_answers_from_builders()
 
 
 def build_answers_markdown(sections: List[ExerciseAnswers]) -> str:
@@ -122,7 +133,7 @@ def build_answers_markdown(sections: List[ExerciseAnswers]) -> str:
 
 
 def generate_answers() -> str:
-    return build_answers_markdown(extract_answers(EXERCISES_PATH.read_text()))
+    return build_answers_markdown(extract_answers_from_builders())
 
 
 def main() -> int:

@@ -6,16 +6,21 @@ Exercises for practicing basic matplotlib.pyplot plotting.
 import random
 import re
 
+from exercise_common import (
+    DEFAULT_COLORS,
+    normalize_code,
+    print_sequence_intro,
+    run_exercise_sequence,
+    verify_step_show,
+)
+
+
 
 class PlotExercises:
     """Exercises for practicing basic pyplot line plotting."""
     
     def __init__(self):
-        self.colors_list = [
-            "red", "blue", "green", "yellow", "orange", "purple", "pink",
-            "magenta", "cyan", "brown", "black", "gray", "olive", "lime",
-            "navy", "coral", "teal", "gold", "silver", "indigo", "violet"
-        ]
+        self.colors_list = DEFAULT_COLORS
         self.linestyles = ["solid", "dotted", "dashed", "dashdot"]
         self.markers = ["o", "*", ".", "x", "+", "s", "D", "H"]
         self.fmt_lines = ["-", ":", "--", "-."]
@@ -99,20 +104,10 @@ class PlotExercises:
                 
                 self.exercises.append(exercise)
     
-    def normalize_code(self, code):
-        """Normalize code string for comparison (remove extra whitespace)."""
-        # Remove leading/trailing whitespace
-        code = code.strip()
-        # Normalize multiple spaces to single space
-        code = re.sub(r'\s+', ' ', code)
-        # Normalize spaces around operators and parentheses
-        code = re.sub(r'\s*([=\[\]\(\)])\s*', r'\1', code)
-        code = re.sub(r'=\s*', '=', code)
-        return code.strip()
     
     def verify_y_array(self, user_input, var_name, expected_values):
         """Verify y array: y1/y2/y3 = np.array([n1, n2, n3, n4])."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(rf'{var_name}\s*=', normalized_input, re.IGNORECASE):
@@ -143,7 +138,7 @@ class PlotExercises:
     
     def verify_x_array(self, user_input, var_name, expected_values):
         """Verify x array: x1/x2 = np.array([m1, m2, m3, m4])."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(rf'{var_name}\s*=', normalized_input, re.IGNORECASE):
@@ -174,7 +169,7 @@ class PlotExercises:
     
     def verify_step4_line1(self, user_input, linestyle, linewidth, color):
         """Verify Step 4: plt.plot(y1, linestyle='...', linewidth=..., color='...')."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.plot
         if not re.search(r'\bplt\.plot\s*\(', normalized_input, re.IGNORECASE):
@@ -216,7 +211,7 @@ class PlotExercises:
     
     def verify_step5_line2(self, user_input, marker, marker_size, mec, mfc):
         """Verify Step 5: plt.plot(y2, marker='...', ms=..., mec='...', mfc='...')."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.plot
         if not re.search(r'\bplt\.plot\s*\(', normalized_input, re.IGNORECASE):
@@ -263,7 +258,7 @@ class PlotExercises:
     
     def verify_step6_line3(self, user_input, fmt):
         """Verify Step 6: plt.plot(y3, 'fmt')."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.plot
         if not re.search(r'\bplt\.plot\s*\(', normalized_input, re.IGNORECASE):
@@ -289,7 +284,7 @@ class PlotExercises:
     
     def verify_plot_simple(self, user_input, x_var, y_var):
         """Verify simple plot: plt.plot(x_var, y_var)."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.plot
         if not re.search(r'\bplt\.plot\s*\(', normalized_input, re.IGNORECASE):
@@ -314,7 +309,7 @@ class PlotExercises:
     
     def verify_title(self, user_input, expected_title):
         """Verify plt.title() call: plt.title("title")."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.title
         if not re.search(r'\bplt\.title\s*\(', normalized_input, re.IGNORECASE):
@@ -336,7 +331,7 @@ class PlotExercises:
     
     def verify_xlabel(self, user_input, expected_label):
         """Verify plt.xlabel() call: plt.xlabel("label")."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.xlabel
         if not re.search(r'\bplt\.xlabel\s*\(', normalized_input, re.IGNORECASE):
@@ -358,7 +353,7 @@ class PlotExercises:
     
     def verify_ylabel(self, user_input, expected_label):
         """Verify plt.ylabel() call: plt.ylabel("label")."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.ylabel
         if not re.search(r'\bplt\.ylabel\s*\(', normalized_input, re.IGNORECASE):
@@ -380,7 +375,7 @@ class PlotExercises:
     
     def verify_grid(self, user_input, color, linestyle, linewidth):
         """Verify plt.grid() call: plt.grid(color='...', linestyle='...', linewidth=...)."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.grid
         if not re.search(r'\bplt\.grid\s*\(', normalized_input, re.IGNORECASE):
@@ -416,15 +411,6 @@ class PlotExercises:
         
         return True, "Correct!"
     
-    def verify_step_show(self, user_input):
-        """Verify final step: plt.show()."""
-        normalized_input = self.normalize_code(user_input)
-        
-        # Must be exactly plt.show() - no parameters
-        if normalized_input.lower() != 'plt.show()':
-            return False, "Invalid format"
-        
-        return True, "Correct!"
     
     def run_exercise(self, exercise, is_last):
         """Run a single plot exercise. Returns True if completed, False if skipped."""
@@ -594,7 +580,7 @@ class PlotExercises:
             print("STEP 7: Show the plot")
             while True:
                 user_input = input("   Your code: ").strip()
-                correct, message = self.verify_step_show(user_input)
+                correct, message = verify_step_show(user_input)
                 if correct:
                     print(f"   ✓ {message}\n")
                     break
@@ -788,7 +774,7 @@ class PlotExercises:
             print("STEP 10: Show the plot")
             while True:
                 user_input = input("   Your code: ").strip()
-                correct, message = self.verify_step_show(user_input)
+                correct, message = verify_step_show(user_input)
                 if correct:
                     print(f"   ✓ {message}\n")
                     break
@@ -950,7 +936,7 @@ class PlotExercises:
             print("STEP 8: Show the plot")
             while True:
                 user_input = input("   Your code: ").strip()
-                correct, message = self.verify_step_show(user_input)
+                correct, message = verify_step_show(user_input)
                 if correct:
                     print(f"   ✓ {message}\n")
                     break
@@ -970,13 +956,11 @@ class PlotExercises:
     
     def start_exercises(self):
         """Start the plot exercises sequence."""
-        print("="*70)
-        print("MATPLOTLIB PYPLOT PRACTICE - PLOT EXERCISES")
-        print("="*70)
-        print("\nThis program contains 3 consecutive exercises for practicing")
-        print("matplotlib.pyplot line plotting. Complete each exercise step by step.\n")
-        
-        input("Press Enter to start...")
+        print_sequence_intro(
+            "MATPLOTLIB PYPLOT PRACTICE - PLOT EXERCISES",
+            "This program contains 3 consecutive exercises for practicing\n"
+            "matplotlib.pyplot line plotting. Complete each exercise step by step.",
+        )
         
         # Statistics tracking
         completed_count = 0

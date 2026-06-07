@@ -15,7 +15,7 @@ def run_main_with_inputs(*inputs):
     return LAST_UPDATED, output.getvalue()
 
 
-def main():
+def run_verify():
     """Verify the menu can show revision info and exit cleanly."""
     try:
         last_updated, output = run_main_with_inputs("0", "7")
@@ -35,4 +35,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_verify()

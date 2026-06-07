@@ -6,17 +6,22 @@ Handles all pie chart exercise generation, verification, and execution.
 import random
 import re
 
+from exercise_common import (
+    DEFAULT_COLORS,
+    normalize_code,
+    print_sequence_intro,
+    run_exercise_sequence,
+    verify_step_show,
+)
+
+
 class PieChartExercises:
     """
     Class for handling pie chart exercises.
     """
     
     def __init__(self):
-        self.colors_list = [
-            "red", "blue", "green", "yellow", "orange", "purple", "pink",
-            "magenta", "cyan", "brown", "black", "gray", "olive", "lime",
-            "navy", "coral", "teal", "gold", "silver", "indigo", "violet"
-        ]
+        self.colors_list = DEFAULT_COLORS
         self.fruit_names = [
             "apple", "banana", "cherry", "date", "strawberry",
             "fig", "grape", "honeydew", "kiwi", "lemon"
@@ -102,25 +107,15 @@ class PieChartExercises:
             }
             self.exercises.append(exercise)
     
-    def normalize_code(self, code):
-        """Normalize code string for comparison (remove extra whitespace)."""
-        # Remove leading/trailing whitespace
-        code = code.strip()
-        # Normalize multiple spaces to single space
-        code = re.sub(r'\s+', ' ', code)
-        # Normalize spaces around operators and parentheses
-        code = re.sub(r'\s*([=\[\]\(\)])\s*', r'\1', code)
-        code = re.sub(r'=\s*', '=', code)
-        return code.strip()
     
     def verify_step1(self, user_input, proportions):
         """Verify Step 1: proportions array."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Build exact expected format
         proportions_str = '[' + ', '.join(map(str, proportions)) + ']'
         expected = f"x=np.array({proportions_str})"
-        normalized_expected = self.normalize_code(expected)
+        normalized_expected = normalize_code(expected)
         
         # Check variable name exactly
         if not re.match(r'x\s*=', normalized_input, re.IGNORECASE):
@@ -149,7 +144,7 @@ class PieChartExercises:
     
     def verify_step2(self, user_input, colors):
         """Verify Step 2: colors array."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'c\s*=', normalized_input, re.IGNORECASE):
@@ -179,7 +174,7 @@ class PieChartExercises:
     
     def verify_step3(self, user_input, labels):
         """Verify Step 3: labels array."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Check variable name exactly
         if not re.match(r'lb\s*=', normalized_input, re.IGNORECASE):
@@ -208,7 +203,7 @@ class PieChartExercises:
     
     def verify_step_explode(self, user_input, explode):
         """Verify explode array. Variable name must be ex."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         if not re.match(r'ex\s*=', normalized_input, re.IGNORECASE):
             return False, "Variable name should be 'ex'"
@@ -233,7 +228,7 @@ class PieChartExercises:
     
     def verify_step4(self, user_input, has_shadow, has_explode):
         """Verify plt.pie() call with optional shadow and explode."""
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.pie (not plt.pies, plt.pied, etc.)
         if not re.search(r'\bplt\.pie\s*\(', normalized_input, re.IGNORECASE):
@@ -280,7 +275,7 @@ class PieChartExercises:
         if not has_legend:
             return True, "This step is not required for this exercise."
         
-        normalized_input = self.normalize_code(user_input)
+        normalized_input = normalize_code(user_input)
         
         # Must use exact function name plt.legend (not plt.legends, plt.legand, etc.)
         if not re.search(r'\bplt\.legend\s*\(', normalized_input, re.IGNORECASE):
@@ -297,15 +292,6 @@ class PieChartExercises:
         
         return True, "Correct!"
     
-    def verify_step_show(self, user_input):
-        """Verify final step: plt.show()."""
-        normalized_input = self.normalize_code(user_input)
-        
-        # Must be exactly plt.show() - no parameters
-        if normalized_input.lower() != 'plt.show()':
-            return False, "Invalid format"
-        
-        return True, "Correct!"
     
     def run_exercise(self, exercise, is_last):
         """Run a single pie chart exercise. Returns True if completed, False if skipped."""
@@ -460,7 +446,7 @@ class PieChartExercises:
         print(f"STEP {show_step}: Show the chart")
         while True:
             user_input = input("   Your code: ").strip()
-            correct, message = self.verify_step_show(user_input)
+            correct, message = verify_step_show(user_input)
             if correct:
                 print(f"   ✓ {message}\n")
                 break
@@ -480,41 +466,9 @@ class PieChartExercises:
     
     def start_exercises(self):
         """Start the pie chart exercises sequence."""
-        print("="*70)
-        print("MATPLOTLIB PYPLOT PRACTICE - PIE CHART EXERCISES")
-        print("="*70)
-        print("\nThis program contains 3 consecutive pie chart exercises for practicing")
-        print("matplotlib.pyplot pie charts. Complete each exercise step by step.\n")
-        
-        input("Press Enter to start...")
-        
-        # Statistics tracking
-        completed_count = 0
-        not_completed_count = 0
-        
-        for i, exercise in enumerate(self.exercises):
-            is_last = (i == len(self.exercises) - 1)
-            completed = self.run_exercise(exercise, is_last)
-            if completed:
-                completed_count += 1
-            else:
-                not_completed_count += 1
-                if is_last:
-                    # Last exercise was skipped, terminate
-                    break
-                # Continue to next exercise
-                continue
-        
-        # Calculate statistics
-        total = completed_count + not_completed_count
-        completed_pct = (completed_count / total * 100) if total > 0 else 0
-        not_completed_pct = (not_completed_count / total * 100) if total > 0 else 0
-        
-        # Display statistics
-        print("\n" + "="*70)
-        print("EXERCISE SEQUENCE STATISTICS")
-        print("="*70)
-        print(f"\nCompleted successfully: {completed_count} ({completed_pct:.1f}%)")
-        print(f"Not completed: {not_completed_count} ({not_completed_pct:.1f}%)")
-        print(f"Total exercises: {total}")
-        print("\n" + "="*70)
+        print_sequence_intro(
+            "MATPLOTLIB PYPLOT PRACTICE - PIE CHART EXERCISES",
+            "This program contains 3 consecutive pie chart exercises for practicing\n"
+            "matplotlib.pyplot pie charts. Complete each exercise step by step.",
+        )
+        run_exercise_sequence(self.exercises, self.run_exercise)
