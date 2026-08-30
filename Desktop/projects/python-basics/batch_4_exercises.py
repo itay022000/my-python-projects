@@ -6,10 +6,12 @@ Same rules as other batches: space normalization, 3 attempts, no overly explicit
 
 import random
 
-from exercise_checks import checker_lists
-from session_runner import print_session_footer, print_session_header, run_simple_exercises
+from validators import checker_lists
+from hints import resolve_hint
+from session_common import EXERCISE_BACKGROUNDS, SessionExit
+from exercise_session import print_batch_intro, print_session_footer, run_simple_exercises
 
-# Shared exact-answer verification (same behavior as before; see exercise_checks.py).
+# Shared exact-answer verification (same behavior as before; see validators.py).
 _normalize_code = checker_lists.normalize
 _make_exercise = checker_lists.make_exercise
 
@@ -262,15 +264,18 @@ class Batch4Exercises:
     MAX_MISTAKES_PER_EXERCISE = 3
 
     def start_exercises(self):
-        print_session_header("PYTHON BASICS - LISTS (BATCH 4)")
-        print("\nYou will get 12 single-line code questions on lists.")
-        print("Each line should be valid Python. Three wrong attempts skip to the next question.\n")
-
-        input("Press Enter to start...")
-
-        exercises = _pick_batch4_session()
-        completed, not_completed = run_simple_exercises(
-            exercises,
-            max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+        print_batch_intro(
+            "Lists Exercise",
+            "You will get 12 single-line code questions.",
+            background=EXERCISE_BACKGROUNDS[4],
         )
+        exercises = _pick_batch4_session()
+        try:
+            completed, not_completed = run_simple_exercises(
+                exercises,
+                max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+                hint_for=lambda ex: resolve_hint(4, ex),
+            )
+        except SessionExit:
+            return
         print_session_footer(completed, not_completed)

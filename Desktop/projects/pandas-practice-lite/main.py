@@ -2,14 +2,7 @@
 Pandas Practice - entry point (B003 thin main).
 """
 
-import warnings
-
-# Keep conda/base installs quiet when optional pandas deps (e.g. bottleneck) are stale.
-warnings.filterwarnings(
-    "ignore",
-    message=r"Pandas requires version .* of 'bottleneck'",
-    category=UserWarning,
-)
+import env_quiet  # noqa: F401 — before pandas (via app)
 
 from app import PandasPractice
 

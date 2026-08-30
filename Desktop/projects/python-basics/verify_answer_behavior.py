@@ -4,7 +4,7 @@ Behavior verification for python-basics:
   • Wrong answers are rejected (check returns False).
   • Equivalent spacing (per-batch normalization) is accepted.
   • Session scoring percentages match the formulas used in batch classes.
-  • Three-strike skip logic matches the interactive session_runner simple loop.
+  • Three-strike skip logic matches the interactive engine simple loop.
 
 Run:  python3 verify_answer_behavior.py
 """
@@ -17,7 +17,7 @@ import re
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from session_runner import _run_one_simple_exercise
+from engine import QuestionOutcome, _run_one_simple_exercise
 
 
 def _pct_completed(completed: int, not_completed: int) -> float:
@@ -55,7 +55,7 @@ def _spaced_variant(normalize, expected: str) -> str | None:
 
 
 def _run_one_like_batch(check, max_mistakes: int, lines: list[str]) -> bool:
-    """Mirror session_runner simple loop control flow (without EOF mid-loop edge cases)."""
+    """Mirror engine simple loop control flow (without EOF mid-loop edge cases)."""
     mistakes = 0
     for line in lines:
         s = line.strip()
@@ -263,7 +263,7 @@ def main() -> None:
                 else:
                     _walk_compound_parts(mod._normalize_code, f"{tag} r{rnd} u{ui}", unit)
 
-    # --- Live session_runner simple loop with mocked input (batch 1): 3 failures then exit ---
+    # --- Live engine simple loop with mocked input (batch 1) ---
     b1_inst = b1.Batch1Exercises()
     ex = b1_inst.pool[0]
     max_m = b1_inst.MAX_MISTAKES_PER_EXERCISE
@@ -271,37 +271,38 @@ def main() -> None:
     with patch("builtins.input", side_effect=lines):
         buf = io.StringIO()
         with redirect_stdout(buf):
-            ok = _run_one_simple_exercise(
+            outcome = _run_one_simple_exercise(
                 ex,
                 1,
                 1,
-                True,
                 max_mistakes=max_m,
                 prompt_label="Your code",
                 input_fn=input,
+                hint=None,
             )
-        assert ok is False
-        assert "Three mistakes" in buf.getvalue()
+        assert outcome == QuestionOutcome.NOT_COMPLETED
+        assert "Correct answer:" in buf.getvalue()
+        assert "Three mistakes" not in buf.getvalue()
 
     lines2 = ["bad", ex["expected"]]
     with patch("builtins.input", side_effect=lines2):
         buf = io.StringIO()
         with redirect_stdout(buf):
-            ok = _run_one_simple_exercise(
+            outcome = _run_one_simple_exercise(
                 ex,
                 1,
                 5,
-                False,
                 max_mistakes=max_m,
                 prompt_label="Your code",
                 input_fn=input,
+                hint=None,
             )
-        assert ok is True
+        assert outcome == QuestionOutcome.COMPLETED
 
     print(
         "verify_answer_behavior: OK (wrong/spacing/strikes + scoring math + "
         "all static pools + exhaustive mixed-batch definitions + 400 stochastic rounds + "
-        "mocked session_runner simple exercise)."
+        "mocked engine simple exercise)."
     )
 
 

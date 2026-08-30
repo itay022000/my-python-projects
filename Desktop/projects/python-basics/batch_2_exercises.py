@@ -10,10 +10,12 @@ Rules for all questions (apply to new questions and question types unless stated
 
 import random
 
-from exercise_checks import checker_basic, make_boolean_word_check
-from session_runner import print_session_footer, print_session_header, prompt_label_batch2, run_simple_exercises
+from validators import checker_basic, make_boolean_word_check
+from hints import resolve_hint
+from session_common import EXERCISE_BACKGROUNDS, SessionExit
+from exercise_session import print_batch_intro, print_session_footer, prompt_label_batch2, run_simple_exercises
 
-# Shared exact-answer verification (same behavior as before; see exercise_checks.py).
+# Shared exact-answer verification (same behavior as before; see validators.py).
 _normalize_code = checker_basic.normalize
 _make_exercise = checker_basic.make_exercise
 _make_boolean_word_check = make_boolean_word_check
@@ -85,44 +87,33 @@ def _pick_string_exercises():
 
 
 # Boolean evaluation pool: (question, "True" or "False"). 5 chosen at random per session.
-# Categories: 1=0, 2=non-zero int, 3=non-zero float, 4=non-zero complex, 5=(x<y), 6=(x>y), 7=(x==y), 8=empty string, 9=non-empty string, 10=None
 POOL_BOOLEAN = [
-    # 1. The number 0 (False)
-    ("What is the truth value of 0? Answer with one word: True or False.", "False"),
-    # 2. Non-zero integer (True)
     ("What is the truth value of 1? Answer with one word: True or False.", "True"),
     ("What is the truth value of 42? Answer with one word: True or False.", "True"),
     ("What is the truth value of -7? Answer with one word: True or False.", "True"),
-    # 3. Non-zero float (True)
     ("What is the truth value of 1.0? Answer with one word: True or False.", "True"),
     ("What is the truth value of 3.14? Answer with one word: True or False.", "True"),
     ("What is the truth value of -0.5? Answer with one word: True or False.", "True"),
-    # 4. Non-zero complex (True)
     ("What is the truth value of 1+0j? Answer with one word: True or False.", "True"),
     ("What is the truth value of 2j? Answer with one word: True or False.", "True"),
-    # 5. (x < y)
     ("What is the result of (3 < 5)? Answer with one word: True or False.", "True"),
-    ("What is the result of (5 < 3)? Answer with one word: True or False.", "False"),
-    ("What is the result of (2 < 2)? Answer with one word: True or False.", "False"),
     ("What is the result of (0 < 1)? Answer with one word: True or False.", "True"),
-    ("What is the result of (10 < 4)? Answer with one word: True or False.", "False"),
-    # 6. (x > y)
     ("What is the result of (5 > 3)? Answer with one word: True or False.", "True"),
-    ("What is the result of (3 > 5)? Answer with one word: True or False.", "False"),
-    ("What is the result of (4 > 4)? Answer with one word: True or False.", "False"),
     ("What is the result of (7 > 2)? Answer with one word: True or False.", "True"),
-    # 7. (x == y)
     ("What is the result of (5 == 5)? Answer with one word: True or False.", "True"),
-    ("What is the result of (5 == 3)? Answer with one word: True or False.", "False"),
     ("What is the result of (0 == 0)? Answer with one word: True or False.", "True"),
-    ("What is the result of (1 == 2)? Answer with one word: True or False.", "False"),
-    # 8. Empty string (False)
-    ("What is the truth value of the empty string \"\"? Answer with one word: True or False.", "False"),
-    # 9. Non-empty string (True)
     ("What is the truth value of the string \"a\"? Answer with one word: True or False.", "True"),
     ("What is the truth value of the string \"hello\"? Answer with one word: True or False.", "True"),
     ("What is the truth value of the string \" \"? Answer with one word: True or False.", "True"),
-    # 10. None (False)
+    ("What is the truth value of 0? Answer with one word: True or False.", "False"),
+    ("What is the result of (5 < 3)? Answer with one word: True or False.", "False"),
+    ("What is the result of (2 < 2)? Answer with one word: True or False.", "False"),
+    ("What is the result of (10 < 4)? Answer with one word: True or False.", "False"),
+    ("What is the result of (3 > 5)? Answer with one word: True or False.", "False"),
+    ("What is the result of (4 > 4)? Answer with one word: True or False.", "False"),
+    ("What is the result of (5 == 3)? Answer with one word: True or False.", "False"),
+    ("What is the result of (1 == 2)? Answer with one word: True or False.", "False"),
+    ("What is the truth value of the empty string \"\"? Answer with one word: True or False.", "False"),
     ("What is the truth value of None? Answer with one word: True or False.", "False"),
 ]
 
@@ -155,16 +146,23 @@ class Batch2Exercises:
 
     def start_exercises(self):
         """Start the strings and booleans exercises sequence."""
-        print_session_header("PYTHON BASICS - STRINGS AND BOOLEANS EXERCISES")
-        print("\nYou will get 7 single-line code questions, followed by 5 boolean questions (True or False).")
-        print("For questions 1-7, type one line of Python code per question. Three wrong attempts skip to the next question.\n")
-
-        input("Press Enter to start...")
-
-        all_exercises = _pick_batch2_session()
-        completed, not_completed = run_simple_exercises(
-            all_exercises,
-            max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
-            prompt_label_for=prompt_label_batch2,
+        print_batch_intro(
+            "Strings and Booleans Exercise",
+            "You will get 12 single-line questions (7 code questions followed by 5 True/False questions).",
+            teach_line=(
+                "After three wrong attempts (one for True/False questions), the answer "
+                "for the question is shown, followed by the next question."
+            ),
+            background=EXERCISE_BACKGROUNDS[2],
         )
+        all_exercises = _pick_batch2_session()
+        try:
+            completed, not_completed = run_simple_exercises(
+                all_exercises,
+                max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+                prompt_label_for=prompt_label_batch2,
+                hint_for=lambda ex: resolve_hint(2, ex),
+            )
+        except SessionExit:
+            return
         print_session_footer(completed, not_completed)

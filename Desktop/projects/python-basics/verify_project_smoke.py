@@ -40,7 +40,7 @@ def main() -> None:
     import batch_8_exercises as b8
     import batch_9_exercises as b9
     import batch_10_exercises as b10
-    from main import PythonBasics
+    from app import PythonBasics
 
     # Entry wiring
     app = PythonBasics()

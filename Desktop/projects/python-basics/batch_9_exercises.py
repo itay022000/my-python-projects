@@ -6,10 +6,12 @@ Same rules as other batches: space normalization, 3 attempts, no overly explicit
 
 import random
 
-from exercise_checks import checker_lists
-from session_runner import print_session_footer, print_session_header, run_simple_exercises
+from validators import checker_lists
+from hints import resolve_hint
+from session_common import EXERCISE_BACKGROUNDS, SessionExit
+from exercise_session import print_batch_intro, print_session_footer, run_simple_exercises
 
-# Shared exact-answer verification (same behavior as before; see exercise_checks.py).
+# Shared exact-answer verification (same behavior as before; see validators.py).
 _normalize_code = checker_lists.normalize
 _make_exercise = checker_lists.make_exercise
 
@@ -142,15 +144,18 @@ class Batch9Exercises:
 
     def start_exercises(self):
         """Start the batch 9 exercises sequence."""
-        print_session_header("PYTHON BASICS - SHORTHAND IF, MATCH, RANGE, MATH (BATCH 9)")
-        print("\nYou will get 12 single-line code questions.")
-        print("\nType one line of Python code per question. Three wrong attempts skip to the next question.\n")
-
-        input("Press Enter to start...")
-
-        exercises = _pick_batch9_session()
-        completed, not_completed = run_simple_exercises(
-            exercises,
-            max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+        print_batch_intro(
+            "Additional Topics Exercise",
+            "You will get 12 single-line code questions.",
+            background=EXERCISE_BACKGROUNDS[9],
         )
+        exercises = _pick_batch9_session()
+        try:
+            completed, not_completed = run_simple_exercises(
+                exercises,
+                max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+                hint_for=lambda ex: resolve_hint(9, ex),
+            )
+        except SessionExit:
+            return
         print_session_footer(completed, not_completed)

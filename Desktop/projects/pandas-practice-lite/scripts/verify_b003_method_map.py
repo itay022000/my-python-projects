@@ -26,13 +26,8 @@ METHOD_TO_FILE = {
     "wait_for_esc": ROOT / "menus.py",
     "explore_dataset": ROOT / "menus.py",
     "main_menu": ROOT / "menus.py",
-    "show_exercises": ROOT / "menus.py",
-    "show_statistics": ROOT / "menus.py",
-    "load_progress": ROOT / "progress.py",
-    "save_progress": ROOT / "progress.py",
-    "record_exercise_completion": ROOT / "progress.py",
-    "reset_statistics": ROOT / "progress.py",
-    "load_dataset": ROOT / "dataset.py",
+    "ensure_dataset_loaded": ROOT / "dataset.py",
+    "fail_fast_if_no_dataset": ROOT / "dataset.py",
     "get_numeric_columns": ROOT / "dataset.py",
     "get_categorical_columns": ROOT / "dataset.py",
     "get_random_numeric_column": ROOT / "dataset.py",
@@ -40,7 +35,6 @@ METHOD_TO_FILE = {
     "get_random_column": ROOT / "dataset.py",
     "get_random_value_from_column": ROOT / "dataset.py",
     "get_random_threshold": ROOT / "dataset.py",
-    "check_dataset_loaded": ROOT / "dataset.py",
     "exercise_1_basic_operations": ROOT / "exercises/exercise_1.py",
     "exercise_2_filtering": ROOT / "exercises/exercise_2.py",
     "exercise_3_sorting_and_selection": ROOT / "exercises/exercise_3.py",
@@ -48,10 +42,10 @@ METHOD_TO_FILE = {
     "exercise_5_data_cleaning": ROOT / "exercises/exercise_5.py",
 }
 
-# Methods that stayed on app.py (not moved from old main's class body)
 APP_ONLY = {
     "__init__",
-    "handle_special_commands",
+    "make_exact_checker",
+    "make_isnull_per_column_checker",
     "run_exercise",
     "is_valid_pandas_code",
     "execute_pandas_code",

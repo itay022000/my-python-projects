@@ -10,10 +10,11 @@ All paths are relative to the `python-basics/` directory.
 
 | File / module | Role |
 |---------------|------|
-| **`main.py`** | Entry point; menu 1–10 launches batch sessions, 11 exits |
+| **`main.py`** | Thin entry → `PythonBasics().main_menu()` |
+| **`app.py`** | Menu shell; options 1–10 launch batch sessions, 11 exits |
 | **`batch_1_exercises.py` … `batch_10_exercises.py`** | Exercise pools, session pickers, and `BatchNExercises.start_exercises()` |
-| **`exercise_checks.py`** | Five normalizer profiles (`normalize_code_*`) and checker bundles (`checker_basic`, `checker_lists`, `checker_sets`, `checker_dicts`, `checker_functions`, plus mixed helpers for batches 5, 8, 10) |
-| **`session_runner.py`** | Shared session loops (`run_simple_exercises`, `run_mixed_units_session`), banners/footers, attempt counting |
+| **`validators.py`** | Five normalizer profiles (`normalize_code_*`) and checker bundles (`checker_basic`, `checker_lists`, `checker_sets`, `checker_dicts`, `checker_functions`, plus mixed helpers for batches 5, 8, 10) |
+| **`engine.py`** | Shared session loops (`run_simple_exercises`, `run_mixed_units_session`), banners/footers, attempt counting |
 | **`verify_exercise_checks_parity.py`** | Normalizer parity vs independent reference implementations |
 | **`verify_project_smoke.py`** | Stochastic smoke across all batches (300 sessions × 10) |
 | **`verify_answer_behavior.py`** | Grading behavior, three-strike logic, pool enumeration |
@@ -78,8 +79,8 @@ Run from the `python-basics/` directory (for example `python3 verify_project_smo
 
 | Script | What it checks |
 |--------|----------------|
-| **`verify_exercise_checks_parity.py`** | Shared **`exercise_checks`** normalizers match independent reference implementations on thousands of random inputs; each batch’s **`_normalize_code`** is wired to the correct profile; one Batch 1 exact-check smoke test. |
-| **`verify_project_smoke.py`** | **`main.PythonBasics`** imports and builds all batches; **`check(expected)`** succeeds for every exercise in **300** stochastic sessions per batch (plus Batch 1’s **full** flat pool); mixed batches (5, 8, 10) validate simple units and every compound **part**; session sizes match the documented constants. |
-| **`verify_answer_behavior.py`** | Wrong answers are rejected; spacing variants that normalize the same as **`expected`** are accepted (where applicable); three-strike logic matches **`session_runner`**’s simple-exercise loop; scoring percentage uses the same **`completed / (completed + not_completed)`** formula as the printed stats; static pools are enumerated exhaustively where defined; batches 5 / 8 / 10 also deep-walk module globals for every compound line plus **400** extra stochastic rounds; **`session_runner._run_one_simple_exercise`** is exercised twice with mocked **`input`** on a Batch 1 item (three failures vs. wrong-then-right). |
+| **`verify_exercise_checks_parity.py`** | Shared **`validators`** normalizers match independent reference implementations on thousands of random inputs; each batch’s **`_normalize_code`** is wired to the correct profile; one Batch 1 exact-check smoke test. |
+| **`verify_project_smoke.py`** | **`app.PythonBasics`** imports and builds all batches; **`check(expected)`** succeeds for every exercise in **300** stochastic sessions per batch (plus Batch 1’s **full** flat pool); mixed batches (5, 8, 10) validate simple units and every compound **part**; session sizes match the documented constants. |
+| **`verify_answer_behavior.py`** | Wrong answers are rejected; spacing variants that normalize the same as **`expected`** are accepted (where applicable); three-strike logic matches **`engine`**’s simple-exercise loop; scoring percentage uses the same **`completed / (completed + not_completed)`** formula as the printed stats; static pools are enumerated exhaustively where defined; batches 5 / 8 / 10 also deep-walk module globals for every compound line plus **400** extra stochastic rounds; **`engine._run_one_simple_exercise`** is exercised twice with mocked **`input`** on a Batch 1 item (three failures vs. wrong-then-right). |
 
 Together they confirm graders, pools, and control-flow helpers behave consistently; they do **not** prove the full interactive menu experience for every batch without running **`main.py`** yourself.

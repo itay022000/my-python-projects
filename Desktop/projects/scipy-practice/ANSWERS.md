@@ -1,6 +1,6 @@
 # Practice Questions and Answers
 
-> Generated from `exercises.py` by `generate_answers.py`.
+> Generated from the `exercises/` package by `generate_answers.py`.
 > Run `python generate_answers.py --check` to verify this file is in sync.
 
 ## 1. Constants Exercise

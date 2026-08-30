@@ -1,5 +1,5 @@
 """
-Parity check: exercise_checks normalizers must match the legacy per-batch
+Parity check: validators normalizers must match the legacy per-batch
 implementations (independent reimplementation for comparison). Run:
 
   python3 verify_exercise_checks_parity.py
@@ -105,7 +105,7 @@ def _rand_code(rng: random.Random, maxlen: int = 48) -> str:
 
 
 def main() -> None:
-    from exercise_checks import (
+    from validators import (
         normalize_code_basic,
         normalize_code_dicts,
         normalize_code_functions,

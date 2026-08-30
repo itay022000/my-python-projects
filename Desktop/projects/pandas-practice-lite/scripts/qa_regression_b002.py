@@ -2,7 +2,7 @@
 """
 QA Developer — B002 validator & helper regression (no subprocess).
 
-Tests practice_common helpers and PandasPractice validators / execution
+Tests session_common / validators helpers and PandasPractice validators / execution
 with correct + wrong cases per function.
 
 Run from project root: python3 scripts/qa_regression_b002.py
@@ -13,18 +13,25 @@ from __future__ import annotations
 import io
 import os
 import random
+import re
 import sys
 from contextlib import redirect_stdout
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-import practice_common
+import env_quiet  # noqa: F401
+
+import pandas as pd
+
+import session_common
+import validators
+from exercises import exercise_1, exercise_2, exercise_3, exercise_4, exercise_5
+import exercise_session as _exercise_session
 from main import PandasPractice
 
 SEED = 42
@@ -49,11 +56,7 @@ def assert_ok(name: str, condition: bool, detail: str = "") -> None:
     record(name, condition, detail)
 
 
-def assert_validator_ok(
-    name: str,
-    result: tuple[bool, str],
-    expect_ok: bool,
-) -> None:
+def assert_validator_ok(name: str, result: tuple[bool, str], expect_ok: bool) -> None:
     ok, msg = result
     if expect_ok:
         record(f"{name} [correct]", ok and bool(msg))
@@ -67,39 +70,64 @@ def load_df() -> pd.DataFrame:
     return app.current_dataset.copy()
 
 
-def test_practice_common() -> None:
+def test_session_common() -> None:
     assert_ok(
-        "normalize_code whitespace",
-        practice_common.normalize_code("  df.head( )  ") == "df.head( )",
+        "normalize_code leading/trailing and parens",
+        validators.normalize_code("  df.head( )  ") == "df.head()",
+    )
+    assert_ok(
+        "normalize_code comparison spacing",
+        validators.normalize_code("df[df['sales_rep'] == 'Alice']")
+        == validators.normalize_code("df[df['sales_rep']=='Alice']"),
+    )
+    assert_ok(
+        "normalize_code threshold spacing",
+        validators.normalize_code("df[df['quantity'] > 42.50]")
+        == validators.normalize_code("df[df['quantity']>42.50]"),
+    )
+    assert_ok(
+        "normalize_code preserves string literal spaces",
+        validators.normalize_code("df[df['name'] == 'John Doe']")
+        == "df[df['name']=='John Doe']",
     )
     assert_ok(
         "codes_match equivalent",
-        practice_common.codes_match("df.shape", "  df.shape  "),
+        validators.codes_match("df.shape", "  df.shape  "),
+    )
+    assert_ok(
+        "codes_match bracket spacing",
+        validators.codes_match(
+            "df[df['product']=='Keyboard']",
+            "df[ df['product'] == 'Keyboard' ]",
+        ),
     )
     assert_ok(
         "codes_match different",
-        not practice_common.codes_match("df.shape", "df.columns"),
+        not validators.codes_match("df.shape", "df.columns"),
+    )
+    assert_ok(
+        "classify_special_input skip",
+        session_common.classify_special_input("skip") == "skip",
+    )
+    assert_ok(
+        "classify_special_input exit",
+        session_common.classify_special_input("exit") == "exit",
+    )
+    assert_ok(
+        "classify_special_input quit",
+        session_common.classify_special_input("Quit") == "exit",
+    )
+    assert_ok(
+        "classify_special_input normal",
+        session_common.classify_special_input("df.shape") is None,
     )
 
     buf = io.StringIO()
     with redirect_stdout(buf):
-        is_skip, is_exit, cont = practice_common.handle_special_commands(
-            "skip", "df.head(10)", "hint"
-        )
+        session_common.print_skip_answer("df.head(10)")
     out = buf.getvalue()
-    assert_ok("handle_special_commands skip", is_skip and not is_exit and cont)
-    assert_ok("handle_special_commands skip message", "Task skipped" in out)
-    assert_ok("handle_special_commands skip answer", "CORRECT ANSWER" in out)
-
-    is_skip, is_exit, cont = practice_common.handle_special_commands(
-        "exit", "df.head(10)", "hint"
-    )
-    assert_ok("handle_special_commands exit", not is_skip and is_exit and not cont)
-
-    is_skip, is_exit, cont = practice_common.handle_special_commands(
-        "df.shape", "df.shape", "hint"
-    )
-    assert_ok("handle_special_commands normal", not is_skip and not is_exit and cont)
+    assert_ok("print_skip_answer message", "Skipping question." in out)
+    assert_ok("print_skip_answer answer", "Correct answer: df.head(10)" in out)
 
 
 def test_is_valid_pandas_code(app: PandasPractice) -> None:
@@ -291,6 +319,85 @@ def test_validate_handle_missing(app: PandasPractice, df: pd.DataFrame) -> None:
     )
 
 
+_VAGUE_TITLE_PATTERNS = (
+    r"specific columns from",
+    r"Rename a column in the",
+    r"Create a new column based on",
+    r"Filter by a specific value",
+    r"^Fill all missing values$",
+    r"^Drop a column with missing values$",
+)
+
+
+def _capture_exercise_specs(ex_num: int, seed: int) -> list[dict[str, str]]:
+    """Build specs as shown to learners (title + correct_answer per question)."""
+    random.seed(seed)
+    app = PandasPractice()
+    captured: list[dict[str, str]] = []
+
+    def _capture(app_, _frame, specs, *, before_question=None):
+        for i in range(len(specs)):
+            if before_question is not None:
+                before_question(i, _frame)
+            captured.append(
+                {
+                    "title": specs[i]["title"],
+                    "correct_answer": specs[i]["correct_answer"],
+                }
+            )
+
+    _exercise_session.run_question_session = _capture
+    for mod in (exercise_1, exercise_2, exercise_3, exercise_4, exercise_5):
+        mod.run_question_session = _capture
+
+    runners = {
+        1: app.exercise_1_basic_operations,
+        2: app.exercise_2_filtering,
+        3: app.exercise_3_sorting_and_selection,
+        4: app.exercise_4_data_manipulation,
+        5: app.exercise_5_data_cleaning,
+    }
+    runners[ex_num]()
+    return captured
+
+
+def _audit_question_copy(title: str, answer: str) -> list[str]:
+    issues: list[str] = []
+    for pattern in _VAGUE_TITLE_PATTERNS:
+        if re.search(pattern, title):
+            issues.append(f"vague:{pattern}")
+    if re.sub(r"\s+", "", answer) == "df.drop(columns=[])":
+        issues.append("placeholder_drop")
+    skip_literals = {"int64", "float64", "all", "box", "bar", "scatter"}
+    for literal in re.findall(r"'([^']+)'", answer):
+        if literal in skip_literals:
+            continue
+        if literal and literal not in title:
+            issues.append(f"missing:{literal!r}")
+    return issues
+
+
+def test_question_titles_complete() -> None:
+    """Every question title must expose random params (500 seeds × 5 exercises)."""
+    for ex_num in range(1, 6):
+        for seed in range(500):
+            specs = _capture_exercise_specs(ex_num, seed)
+            assert_ok(
+                f"ex{ex_num} seed{seed} question count",
+                len(specs) == 8,
+                f"got {len(specs)}",
+            )
+            for qnum, spec in enumerate(specs, 1):
+                issues = _audit_question_copy(spec["title"], spec["correct_answer"])
+                if issues:
+                    detail = (
+                        f"title={spec['title']!r} answer={spec['correct_answer']!r} "
+                        f"issues={issues}"
+                    )
+                    assert_ok(f"ex{ex_num} q{qnum} seed{seed} copy", False, detail)
+                    break
+
+
 def main() -> int:
     os.chdir(_ROOT)
 
@@ -302,7 +409,7 @@ def main() -> int:
     print("QA Developer — B002 regression (validators & helpers)")
     print("=" * 70)
 
-    test_practice_common()
+    test_session_common()
     test_is_valid_pandas_code(app)
     test_execute_pandas_code(app, df)
     test_validate_head_result(app, df)
@@ -314,6 +421,7 @@ def main() -> int:
     test_validate_merge_result(app, df)
     test_validate_drop_duplicates(app, df)
     test_validate_handle_missing(app, df)
+    test_question_titles_complete()
 
     total = _pass + _fail
     print(f"\nPassed: {_pass}/{total}")

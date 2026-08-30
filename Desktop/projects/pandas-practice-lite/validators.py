@@ -1,5 +1,11 @@
 """Pandas code execution and result validators (sales_data.csv practice app)."""
 
+import contextlib
+import io
+import re
+
+import env_quiet  # noqa: F401 — before pandas
+
 import pandas as pd
 
 
@@ -32,38 +38,52 @@ def is_valid_pandas_code(code):
 
 
 def execute_pandas_code(df, code, expected_result=None, description="", include_plotting=False):
-    """Execute pandas code and return (result, error)."""
+    """Execute pandas code and return (result, error).
+
+    Stdout/stderr from the evaluated code (e.g. df.info(), matplotlib setup
+    noise) are swallowed so learners only see suite UI lines.
+    """
     try:
         safe_dict = {"df": df, "pd": pd}
-        if include_plotting:
-            import matplotlib.pyplot as plt
-            import matplotlib
-            matplotlib.use('Agg')
-            safe_dict["plt"] = plt
-            safe_dict["matplotlib"] = matplotlib
-
-        code_stripped = code.strip()
-        has_equals = '=' in code_stripped
-
-        if has_equals:
-            temp_code = code_stripped.replace('==', 'XX').replace('!=', 'XX').replace('<=', 'XX').replace('>=', 'XX')
-            has_standalone_equals = '=' in temp_code
-            looks_like_assignment = has_standalone_equals and ('df[' in code_stripped or 'df.' in code_stripped)
-            is_assignment = looks_like_assignment
-        else:
-            is_assignment = False
-
-        if is_assignment:
-            df_copy = df.copy()
-            safe_dict_copy = {"df": df_copy, "pd": pd}
+        sink = io.StringIO()
+        with contextlib.redirect_stdout(sink), contextlib.redirect_stderr(sink):
             if include_plotting:
-                safe_dict_copy["plt"] = safe_dict.get("plt")
-                safe_dict_copy["matplotlib"] = safe_dict.get("matplotlib")
-            exec(code, {"__builtins__": {}}, safe_dict_copy)
-            return None, None
+                import matplotlib
+                matplotlib.use("Agg")
+                import matplotlib.pyplot as plt
 
-        result = eval(code, {"__builtins__": {}}, safe_dict)
-        return result, None
+                safe_dict["plt"] = plt
+                safe_dict["matplotlib"] = matplotlib
+
+            code_stripped = code.strip()
+            has_equals = "=" in code_stripped
+
+            if has_equals:
+                temp_code = (
+                    code_stripped.replace("==", "XX")
+                    .replace("!=", "XX")
+                    .replace("<=", "XX")
+                    .replace(">=", "XX")
+                )
+                has_standalone_equals = "=" in temp_code
+                looks_like_assignment = has_standalone_equals and (
+                    "df[" in code_stripped or "df." in code_stripped
+                )
+                is_assignment = looks_like_assignment
+            else:
+                is_assignment = False
+
+            if is_assignment:
+                df_copy = df.copy()
+                safe_dict_copy = {"df": df_copy, "pd": pd}
+                if include_plotting:
+                    safe_dict_copy["plt"] = safe_dict.get("plt")
+                    safe_dict_copy["matplotlib"] = safe_dict.get("matplotlib")
+                exec(code, {"__builtins__": {}}, safe_dict_copy)
+                return None, None
+
+            result = eval(code, {"__builtins__": {}}, safe_dict)
+            return result, None
     except Exception as e:
         return None, str(e)
 
@@ -324,3 +344,34 @@ def validate_handle_missing(result, df, method='fill', fill_value=None):
         return True, f"Correct! Filled missing values. ({missing_before - missing_after} values filled)"
 
     return True, "Result looks good!"
+
+
+# ---------------------------------------------------------------------------
+# Code normalization (B015 — grading helpers)
+# ---------------------------------------------------------------------------
+
+
+def _tighten_operator_spacing(code: str) -> str:
+    """Normalize spacing around symbolic operators (suite code-answer rules)."""
+    code = re.sub(r"\s*(==|!=|<=|>=|//|\*\*)\s*", r"\1", code)
+    code = re.sub(r"\s*([<>&|])\s*", r"\1", code)
+    return code
+
+
+def normalize_code(code: str) -> str:
+    """Normalize code for exact-match comparison (insignificant whitespace)."""
+    if not code:
+        return ""
+    code = code.strip()
+    code = re.sub(r"\s+", " ", code)
+    code = _tighten_operator_spacing(code)
+    code = re.sub(r"\s*([=\[\]\(\):,])\s*", r"\1", code)
+    code = re.sub(r"=\s*", "=", code)
+    code = re.sub(r"\s*,\s*", ",", code)
+    code = re.sub(r"\s*([*+/])\s*", r"\1", code)
+    code = re.sub(r"\s*-\s*", "-", code)
+    return code.strip()
+
+
+def codes_match(user_code: str, correct_answer: str) -> bool:
+    return normalize_code(user_code) == normalize_code(correct_answer)

@@ -1,4 +1,4 @@
-"""Ensure the committed answer key stays in sync with exercises.py."""
+"""Ensure the committed answer key stays in sync with the exercises package."""
 
 import unittest
 

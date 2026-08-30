@@ -55,11 +55,15 @@ The program provides an interactive menu where you can:
 
 ```
 scipy-practice/
-├── main.py                    # Entry point: menu, LAST_UPDATED, CLI loop
-├── engine.py                  # Question specs + run_exercise_questions()
-├── practice.py                # normalize_code(), ask_question(), ExerciseAbort
-├── exercises.py               # Six exercise_* sessions + PRACTICE_BUILDERS
-├── verify_smoke.py            # Menu 0 + exit smoke
+├── main.py                    # Thin entry point
+├── app.py                     # Menu shell (ScipyPractice)
+├── exercise_session.py        # run_exercise_questions() orchestrator
+├── engine.py                  # Question specs + ask_question() loop
+├── session_common.py          # Strike/skip/exit CLI helpers
+├── validators.py              # normalize_code() for exact-match grading
+├── hints.py                   # Strike-1 hint strings (imported by exercises/)
+├── exercises/                 # Six exercise modules + PRACTICE_BUILDERS
+├── verify_smoke.py            # Menu exit smoke
 ├── verify_answer_behavior.py  # All 29 questions: correct/wrong grading matrix
 ├── verify_skip_exit_behavior.py  # All 29 questions: skip + exit at each prompt
 ├── generate_answers.py        # Regenerates/checks ANSWERS.md

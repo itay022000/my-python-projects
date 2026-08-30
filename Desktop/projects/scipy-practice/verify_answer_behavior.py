@@ -14,7 +14,7 @@ from __future__ import annotations
 from exercises import PRACTICE_BUILDERS
 
 
-# Extra accepted forms beyond reference_answer (constants commutativity).
+# Extra accepted forms beyond correct_answer (constants commutativity).
 CONSTANTS_CORRECT_ALTERNATES: dict[int, list[str]] = {
     0: ["const.inch * 12"],
     1: ["const.mile * 5"],
@@ -109,8 +109,8 @@ def main() -> None:
 
         for qi, question in enumerate(questions):
             total_questions += 1
-            ref = question.reference_answer
-            assert ref, f"{exercise_id} Q{qi + 1}: missing reference_answer"
+            ref = question.correct_answer
+            assert ref, f"{exercise_id} Q{qi + 1}: missing correct_answer"
 
             codes = [ref]
             if exercise_id == "constants":

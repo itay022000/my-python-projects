@@ -2,7 +2,7 @@
 """
 QA Developer — B002 exercise flow (skip / exit / wrong / correct).
 
-5 exercises × 8 tasks × 4 cases = 160 checks via mocked builtins.input.
+5 exercises × 8 questions × 4 cases = 160 checks via mocked builtins.input.
 No subprocess — calls PandasPractice exercise methods directly.
 
 Run from project root: python3 scripts/qa_flow_b002.py
@@ -23,13 +23,14 @@ _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-# Non-interactive backend before any matplotlib import (plot tasks, task 8).
 os.environ.setdefault("MPLBACKEND", "Agg")
 
 import validators as _validators_mod
 from main import PandasPractice
 
 _REAL_EXECUTE_PANDAS = _validators_mod.execute_pandas_code
+
+QUESTIONS_PER_EXERCISE = 8
 
 
 def _flow_execute_pandas_code(
@@ -39,13 +40,14 @@ def _flow_execute_pandas_code(
     description="",
     include_plotting=False,
 ):
-    """Flow QA: plot tasks are graded by exact match; tolerate broken matplotlib wheels."""
+    """Flow QA: plot questions are graded by exact match; tolerate broken matplotlib wheels."""
     result, error = _REAL_EXECUTE_PANDAS(
         df, code, expected_result, description, include_plotting
     )
     if include_plotting and error:
         return None, None
     return result, error
+
 
 SEED = 42
 WRONG = "___qa_wrong_b002___"
@@ -83,36 +85,21 @@ def record(name: str, ok: bool, detail: str = "") -> None:
         _failures.append(line)
 
 
-def section_after_task(stdout: str, task_num: int) -> str:
-    marker = f"TASK {task_num}:"
-    idx = stdout.rfind(marker)
-    return stdout[idx:] if idx >= 0 else stdout
+def question_marker(task_num: int, total: int = QUESTIONS_PER_EXERCISE) -> str:
+    return f"--- Question {task_num}/{total} ---"
 
 
 def parse_skip_answers(stdout: str) -> list[str]:
-    """Extract printed correct-answer code blocks from skip / failure output."""
-    parts = stdout.split("📖 CORRECT ANSWER:")
+    """Extract printed correct-answer lines from skip / failure output."""
     answers: list[str] = []
-    for block in parts[1:]:
-        code_lines: list[str] = []
-        for line in block.splitlines():
-            stripped = line.strip()
-            if not stripped:
-                continue
-            if stripped.startswith("="):
-                if code_lines:
-                    break
-                continue
-            if stripped.startswith("💡"):
-                break
-            code_lines.append(stripped)
-        if code_lines:
-            answers.append("\n".join(code_lines))
+    for line in stdout.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("Correct answer:"):
+            answers.append(stripped.split("Correct answer:", 1)[1].strip())
     return answers
 
 
 def _input_queue(initial: list[str]) -> tuple[list[str], callable]:
-    """Build a poppable input queue with safe EOF fallback."""
     queue = list(initial) + [""] * 40
 
     def _fake_input(_prompt: str = "") -> str:
@@ -122,7 +109,6 @@ def _input_queue(initial: list[str]) -> tuple[list[str], callable]:
 
 
 def golden_for_task(ex_num: int, task_num: int) -> str | None:
-    """Skip to task_num and read the printed correct answer for that task."""
     inputs = ["skip"] * task_num + ["exit"]
     stdout = run_exercise_flow(ex_num, inputs)
     parsed = parse_skip_answers(stdout)
@@ -134,44 +120,40 @@ def golden_for_task(ex_num: int, task_num: int) -> str | None:
 
 
 def section_for_task_only(stdout: str, task_num: int) -> str:
-    marker = f"TASK {task_num}:"
-    start = stdout.rfind(marker)
-    if start < 0:
+    start_match = re.search(rf"--- Question {task_num}/\d+ ---", stdout)
+    if not start_match:
         return stdout
-    rest = stdout[start + len(marker) :]
-    next_match = re.search(rf"\nTASK {task_num + 1}:", rest)
-    end = start + len(marker) + next_match.start() if next_match else len(stdout)
+    start = start_match.start()
+    rest = stdout[start:]
+    next_match = re.search(rf"\n--- Question {task_num + 1}/\d+ ---", rest)
+    end = start + next_match.start() if next_match else len(stdout)
     return stdout[start:end]
 
 
-def correct_inputs_for_task(
-    ex_num: int, task_num: int, golden: str
-) -> list[str]:
+def correct_inputs_for_task(ex_num: int, task_num: int, golden: str) -> list[str]:
     if (ex_num, task_num) in STATIC_CORRECT:
         return STATIC_CORRECT[(ex_num, task_num)]
     if ex_num == 1 and task_num in (1, 5):
-        # random.randint patched to HEAD_TAIL_N; also try full range per B002 brief
         primary = golden
-        attempts = [f"df.head({n})" for n in range(5, 16)] if task_num == 1 else [
-            f"df.tail({n})" for n in range(5, 16)
-        ]
+        attempts = (
+            [f"df.head({n})" for n in range(5, 16)]
+            if task_num == 1
+            else [f"df.tail({n})" for n in range(5, 16)]
+        )
         if primary in attempts:
             return [primary]
         return attempts
     return [golden]
 
 
-def run_exercise_flow(
-    ex_num: int,
-    task_inputs: list[str],
-) -> str:
+def run_exercise_flow(ex_num: int, task_inputs: list[str]) -> str:
     random.seed(SEED)
     app = PandasPractice()
     method = getattr(app, EXERCISE_METHODS[ex_num])
     buf = io.StringIO()
     _, fake_input = _input_queue(task_inputs)
+
     def _choice(seq):
-        # list() avoids "ambiguous truth value" when seq is a numpy ndarray
         items = list(seq)
         if len(items) == 0:
             raise IndexError("empty sequence in test")
@@ -202,12 +184,7 @@ def run_exercise_flow(
     return buf.getvalue()
 
 
-def build_inputs(
-    ex_num: int,
-    task_num: int,
-    case: str,
-    golden: str,
-) -> list[str]:
+def build_inputs(ex_num: int, task_num: int, case: str, golden: str) -> list[str]:
     prefix = ["skip"] * (task_num - 1)
     if case == "wrong":
         return prefix + [WRONG, WRONG, WRONG, "exit"]
@@ -221,30 +198,25 @@ def build_inputs(
     raise ValueError(case)
 
 
-def test_flow_case(
-    ex_num: int,
-    task_num: int,
-    case: str,
-    golden: str,
-) -> None:
+def test_flow_case(ex_num: int, task_num: int, case: str, golden: str) -> None:
     name = f"ex{ex_num} task{task_num} {case}"
     inputs = build_inputs(ex_num, task_num, case, golden)
     stdout = run_exercise_flow(ex_num, inputs)
     section = section_for_task_only(stdout, task_num)
 
     if case == "wrong":
-        count = section.count("CORRECT ANSWER")
-        record(name, count == 1, f"CORRECT ANSWER count={count} in task section")
+        count = section.count("Correct answer:")
+        record(name, count == 1, f"Correct answer count={count} in question section")
     elif case == "skip":
         record(
             name,
-            "Task skipped" in section and section.count("CORRECT ANSWER") == 1,
-            f"skipped={'Task skipped' in section}, answers={section.count('CORRECT ANSWER')}",
+            "Skipping question." in section and section.count("Correct answer:") == 1,
+            f"skipped={'Skipping question.' in section}, answers={section.count('Correct answer:')}",
         )
     elif case == "exit":
         record(
             name,
-            "Exercise exited" in stdout and "Score:" in stdout,
+            "Session exited." in stdout and "Completed successfully:" in stdout,
             "missing exit message",
         )
     elif case == "correct":
@@ -253,10 +225,10 @@ def test_flow_case(
             trial_inputs = ["skip"] * (task_num - 1) + [code, "exit"]
             trial_out = run_exercise_flow(ex_num, trial_inputs)
             trial_section = section_for_task_only(trial_out, task_num)
-            if "✅ Correct!" in trial_section:
+            if "✓ Correct!" in trial_section:
                 record(name, True)
                 return
-        record(name, False, "success marker not found in task section")
+        record(name, False, "success marker not found in question section")
 
 
 def main() -> int:

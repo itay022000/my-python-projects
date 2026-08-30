@@ -11,10 +11,12 @@ Rules for all questions (apply to new questions and question types unless stated
 
 import random
 
-from exercise_checks import checker_basic
-from session_runner import print_session_footer, print_session_header, run_simple_exercises
+from validators import checker_basic
+from hints import resolve_hint
+from session_common import EXERCISE_BACKGROUNDS, SessionExit
+from exercise_session import print_batch_intro, print_session_footer, run_simple_exercises
 
-# Shared exact-answer verification (same behavior as before; see exercise_checks.py).
+# Shared exact-answer verification (same behavior as before; see validators.py).
 _normalize_code = checker_basic.normalize
 _make_exact_check = checker_basic.make_exact_check
 _make_exercise = checker_basic.make_exercise
@@ -94,18 +96,21 @@ class Batch1Exercises:
 
     def start_exercises(self):
         """Start the output, comments, variables and types exercises sequence."""
-        print_session_header("PYTHON BASICS - OUTPUT, COMMENTS, VARIABLES AND TYPES EXERCISES")
-        print("\nYou will get 12 single-line code questions.")
-        print("Type one line of Python code per question. Three wrong attempts skip to the next question.\n")
-
-        input("Press Enter to start...")
-
+        print_batch_intro(
+            "Basic Topics Exercise",
+            "You will get 12 single-line code questions.",
+            background=EXERCISE_BACKGROUNDS[1],
+        )
         chosen = _pick_batch1_session(
             self.pool,
             self.EXERCISES_PER_SESSION,
         )
-        completed, not_completed = run_simple_exercises(
-            chosen,
-            max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
-        )
+        try:
+            completed, not_completed = run_simple_exercises(
+                chosen,
+                max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+                hint_for=lambda ex: resolve_hint(1, ex),
+            )
+        except SessionExit:
+            return
         print_session_footer(completed, not_completed)

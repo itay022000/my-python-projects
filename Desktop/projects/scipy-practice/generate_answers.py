@@ -1,4 +1,4 @@
-"""Generate ANSWERS.md from Question definitions in exercises.py.
+"""Generate ANSWERS.md from Question definitions in the exercises package.
 
 This keeps the answer key tied to the same prompts and reference answers used by
 the interactive exercises.
@@ -11,7 +11,7 @@ from typing import List, NamedTuple, Optional
 
 
 ROOT = Path(__file__).resolve().parent
-EXERCISES_PATH = ROOT / "exercises.py"
+EXERCISES_PACKAGE = ROOT / "exercises"
 ANSWERS_PATH = ROOT / "ANSWERS.md"
 
 EXERCISE_TITLES = {
@@ -35,7 +35,7 @@ BUILDER_ORDER = [
 
 class AnswerQuestion(NamedTuple):
     text: str
-    reference_answer: str
+    correct_answer: str
 
 
 class ExerciseAnswers(NamedTuple):
@@ -73,13 +73,13 @@ def extract_question(call: ast.Call) -> Optional[AnswerQuestion]:
     if text_node is None and call.args:
         text_node = call.args[0]
 
-    reference_node = get_keyword(call, "reference_answer")
+    reference_node = get_keyword(call, "correct_answer")
 
     text = string_value(text_node)
-    reference_answer = string_value(reference_node)
-    if text is None or reference_answer is None:
+    correct_answer = string_value(reference_node)
+    if text is None or correct_answer is None:
         return None
-    return AnswerQuestion(text=text, reference_answer=reference_answer)
+    return AnswerQuestion(text=text, correct_answer=correct_answer)
 
 
 def extract_answers_from_builders() -> List[ExerciseAnswers]:
@@ -93,7 +93,7 @@ def extract_answers_from_builders() -> List[ExerciseAnswers]:
             ExerciseAnswers(
                 title=title,
                 questions=[
-                    AnswerQuestion(text=q.text, reference_answer=q.reference_answer or "")
+                    AnswerQuestion(text=q.text, correct_answer=q.correct_answer or "")
                     for q in questions
                 ],
             )
@@ -102,7 +102,7 @@ def extract_answers_from_builders() -> List[ExerciseAnswers]:
 
 
 def extract_answers(source: str) -> List[ExerciseAnswers]:
-    """Extract ordered exercise question/answer data from exercises.py source (legacy AST)."""
+    """Extract ordered exercise question/answer data from exercises package (legacy AST)."""
     del source  # builders are authoritative; AST path kept for compatibility tooling
     return extract_answers_from_builders()
 
@@ -112,7 +112,7 @@ def build_answers_markdown(sections: List[ExerciseAnswers]) -> str:
     lines = [
         "# Practice Questions and Answers",
         "",
-        "> Generated from `exercises.py` by `generate_answers.py`.",
+        "> Generated from the `exercises/` package by `generate_answers.py`.",
         "> Run `python generate_answers.py --check` to verify this file is in sync.",
         "",
     ]
@@ -124,7 +124,7 @@ def build_answers_markdown(sections: List[ExerciseAnswers]) -> str:
         for index, question in enumerate(section.questions, start=1):
             lines.append(f"### Question {index}")
             lines.append(f"**Question:** {question.text}  ")
-            lines.append(f"**Reference answer:** `{question.reference_answer}`")
+            lines.append(f"**Reference answer:** `{question.correct_answer}`")
             lines.append("")
             lines.append("---")
             lines.append("")
@@ -141,7 +141,7 @@ def main() -> int:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="Fail if ANSWERS.md is not in sync with exercises.py.",
+        help="Fail if ANSWERS.md is not in sync with the exercises package.",
     )
     args = parser.parse_args()
 
@@ -155,7 +155,7 @@ def main() -> int:
         return 0
 
     ANSWERS_PATH.write_text(expected)
-    print("Wrote ANSWERS.md from exercises.py.")
+    print("Wrote ANSWERS.md from exercises package.")
     return 0
 
 

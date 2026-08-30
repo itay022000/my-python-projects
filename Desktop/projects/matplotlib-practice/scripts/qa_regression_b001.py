@@ -22,13 +22,13 @@ _ROOT = Path(__file__).resolve().parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from bar_plot_exercises import BarPlotExercises
-from exercise_common import normalize_code, verify_step_show
-from histogram_exercises import HistogramExercises
-from pie_chart_exercises import PieChartExercises
-from plot_exercises import PlotExercises
-from scatter_plot_exercises import ScatterPlotExercises
-from subplot_exercises import SubplotExercises
+from exercises.bar_plot_exercises import BarPlotExercises
+from engine import normalize_code, verify_step_show
+from exercises.histogram_exercises import HistogramExercises
+from exercises.pie_chart_exercises import PieChartExercises
+from exercises.plot_exercises import PlotExercises
+from exercises.scatter_plot_exercises import ScatterPlotExercises
+from exercises.subplot_exercises import SubplotExercises
 
 WRONG = "___definitely_wrong_qa_input___"
 

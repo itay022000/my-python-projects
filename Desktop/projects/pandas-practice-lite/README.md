@@ -54,8 +54,10 @@ After **3 wrong attempts** on a task, the correct answer is shown once and the e
 ```text
 main.py              # Entry: python3 main.py → main()
 app.py               # PandasPractice class (wiring + run_exercise + validator delegates)
-practice_common.py   # Shared helpers (code normalization, skip/exit handling)
-validators.py        # execute_pandas_code, is_valid_pandas_code, validate_*
+session_common.py    # Shared CLI helpers (skip/exit, intros, footers)
+engine.py            # Question loop (ask_code_question)
+hints.py             # Strike-1 hint strings
+validators.py        # Sandbox, validate_*, normalize_code / codes_match
 progress.py          # Progress JSON load/save, exercise stats, reset
 dataset.py           # load_dataset, column/threshold helpers
 menus.py             # Main menu, explore (1–9), statistics, wait_for_esc

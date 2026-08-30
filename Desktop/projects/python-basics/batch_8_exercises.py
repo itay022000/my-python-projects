@@ -10,10 +10,12 @@ Rules for all questions (apply to new questions unless stated otherwise):
 
 import random
 
-from exercise_checks import checker_mixed_functions
-from session_runner import print_session_footer, print_session_header, run_mixed_units_session
+from validators import checker_mixed_functions
+from hints import resolve_hint
+from session_common import EXERCISE_BACKGROUNDS, SessionExit
+from exercise_session import print_batch_intro, print_session_footer, run_mixed_units_session
 
-# Shared exact-answer verification (same behavior as before; see exercise_checks.py).
+# Shared exact-answer verification (same behavior as before; see validators.py).
 _normalize_code = checker_mixed_functions.normalize
 _make_simple = checker_mixed_functions.make_simple
 _make_compound = checker_mixed_functions.make_compound
@@ -254,16 +256,18 @@ class Batch8Exercises:
 
     def start_exercises(self):
         """Start the functions exercises sequence."""
-        print_session_header("PYTHON BASICS - FUNCTIONS EXERCISES")
-        print("\nYou will get 11 questions. Each counts the same toward your session score (~9.09% per question).")
-        print("One question asks for two lines of code; the other ten ask for one line each.")
-        print("Type one line when prompted. Three wrong attempts skip to the next question.\n")
-
-        input("Press Enter to start...")
-
-        units = _pick_batch8_units()
-        units_passed, units_failed = run_mixed_units_session(
-            units,
-            max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+        print_batch_intro(
+            "Functions Exercise",
+            "You will get 11 questions (~9.09% each). One asks for two lines; the rest ask for one.",
+            background=EXERCISE_BACKGROUNDS[8],
         )
+        units = _pick_batch8_units()
+        try:
+            units_passed, units_failed = run_mixed_units_session(
+                units,
+                max_mistakes=self.MAX_MISTAKES_PER_EXERCISE,
+                hint_for=lambda ex: resolve_hint(8, ex),
+            )
+        except SessionExit:
+            return
         print_session_footer(units_passed, units_failed)

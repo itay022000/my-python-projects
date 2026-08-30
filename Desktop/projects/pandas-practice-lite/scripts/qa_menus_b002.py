@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
-B002 extension — menus, statistics, and plot tasks (lightweight).
+B002 extension — menus and plot questions (lightweight).
 
 - Exploration menu: options 1–9 + error paths (mocked input, no ESC wait).
-- Statistics submenu: empty / populated, reset yes/no, invalid choices.
-- Plot tasks: exercises 1, 2, 4 task 8 only (Agg backend, plt.show mocked).
+- Plot questions: exercises 1, 2, 4 question 8 only (Agg backend, plt.show mocked).
 
-No subprocess, no GUI windows. Uses a temp progress.json so your real
-progress.json is not modified.
+No subprocess, no GUI windows.
 
 Run from project root: python3 scripts/qa_menus_b002.py
 """
@@ -18,7 +16,6 @@ import io
 import os
 import random
 import sys
-import tempfile
 import time
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -34,9 +31,8 @@ _pass = 0
 _fail = 0
 _failures: list[str] = []
 
-# Stable column/value for exploration options 7–9
 _SAMPLE_COL = "category"
-_FILTER_VAL = "Electronics"  # present in sales_data.csv
+_FILTER_VAL = "Electronics"
 
 
 def record(name: str, ok: bool, detail: str = "") -> None:
@@ -64,19 +60,16 @@ def _patches(input_fn):
     return [
         patch("builtins.input", side_effect=input_fn),
         patch.object(PandasPractice, "wait_for_esc", lambda self: None),
+        # Default: run each option once, then return to the exploration menu.
+        patch.object(PandasPractice, "_repeat_or_return", lambda self: False),
         patch("random.randint", return_value=10),
         patch("random.choice", side_effect=lambda s: list(s)[0] if len(list(s)) else None),
         patch("random.sample", side_effect=lambda pop, k: list(pop)[:k]),
     ]
 
 
-def make_app(progress: dict | None = None) -> tuple[PandasPractice, tempfile.TemporaryDirectory]:
-    """App with isolated progress file (dataset still loads once)."""
-    tmp = tempfile.TemporaryDirectory(prefix="qa_b002_")
-    app = PandasPractice()
-    app.progress_file = Path(tmp.name) / "progress.json"
-    app.progress = progress or {"exercise_stats": {}, "last_session": None}
-    return app, tmp
+def make_app() -> PandasPractice:
+    return PandasPractice()
 
 
 def run_explore(app: PandasPractice, inputs: list[str]) -> str:
@@ -88,21 +81,6 @@ def run_explore(app: PandasPractice, inputs: list[str]) -> str:
     try:
         with redirect_stdout(buf):
             app.explore_dataset()
-    finally:
-        for p in ps:
-            p.stop()
-    return buf.getvalue()
-
-
-def run_statistics(app: PandasPractice, inputs: list[str]) -> str:
-    buf = io.StringIO()
-    fake = _input_queue(inputs)
-    ps = _patches(fake)
-    for p in ps:
-        p.start()
-    try:
-        with redirect_stdout(buf):
-            app.show_statistics()
     finally:
         for p in ps:
             p.stop()
@@ -130,218 +108,286 @@ def run_exercise(app: PandasPractice, ex_num: int, inputs: list[str]) -> str:
 
 
 def parse_skip_answer(stdout: str) -> str | None:
-    if "📖 CORRECT ANSWER:" not in stdout:
-        return None
-    block = stdout.split("📖 CORRECT ANSWER:")[-1]
-    if "💡 Explanation:" in block:
-        block = block.split("💡 Explanation:")[0]
-    for line in block.splitlines():
-        s = line.strip()
-        if s and not s.startswith("=") and not s.startswith("💡"):
-            return s
-    return None
-
-
-# --- Exploration menu ---
+    answer = None
+    for line in stdout.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("Correct answer:"):
+            answer = stripped.split("Correct answer:", 1)[1].strip()
+    return answer
 
 
 def test_explore_happy_path_all_options() -> None:
-    """One loop through options 1–8 then 9 return (single init — fast)."""
-    app, tmp = make_app()
-    try:
-        inputs = [
-            "1",
-            "5",  # head rows
-            "2",
-            "5",  # tail
-            "3",  # info
-            "4",  # describe
-            "5",  # dtypes
-            "6",
-            _SAMPLE_COL,
-            "7",
-            _SAMPLE_COL,
-            _FILTER_VAL,
-            "8",
-            "quantity",
-            "yes",
-            "9",
+    app = make_app()
+    inputs = [
+        "1",
+        "5",
+        "2",
+        "5",
+        "3",
+        "4",
+        "5",
+        _SAMPLE_COL,
+        "6",
+        _SAMPLE_COL,
+        _FILTER_VAL,
+        "7",
+        "quantity",
+        "a",
+        "8",
+    ]
+    out = run_explore(app, inputs)
+    markers = [
+        ("explore head", "First 5 rows"),
+        ("explore tail", "Last 5 rows"),
+        ("explore info", "Dataset Info"),
+        ("explore describe", "Basic Statistics"),
+        ("explore unique", f"Unique values in '{_SAMPLE_COL}'"),
+        ("explore filter", "Filtered results"),
+        ("explore sort", "Sorted data"),
+    ]
+    for name, needle in markers:
+        record(name, needle in out)
+    record("explore menu shown", "DATASET EXPLORATION MENU" in out)
+    record(
+        "explore info/stats no repeat prompt",
+        "Press Enter to run this option again" not in out,
+    )
+
+
+def test_explore_exit_hint_on_typed_prompts() -> None:
+    """Exit/quit affordance appears in input() prompts for options 1 and 5."""
+    app = make_app()
+    hint = "or type 'exit'/'quit' to return"
+    seen: list[str] = []
+
+    def run_with(inputs: list[str]) -> None:
+        seen.clear()
+        answers = iter(inputs)
+
+        def capturing_input(prompt=""):
+            seen.append(str(prompt))
+            try:
+                return next(answers)
+            except StopIteration:
+                return "8"
+
+        ps = [
+            patch("builtins.input", side_effect=capturing_input),
+            patch.object(PandasPractice, "wait_for_esc", lambda self: None),
+            patch.object(PandasPractice, "_repeat_or_return", lambda self: False),
         ]
-        out = run_explore(app, inputs)
-        markers = [
-            ("explore head", "First 5 rows"),
-            ("explore tail", "Last 5 rows"),
-            ("explore info", "Dataset Info"),
-            ("explore describe", "Basic Statistics"),
-            ("explore dtypes", "Columns and Data Types"),
-            ("explore unique", f"Unique values in '{_SAMPLE_COL}'"),
-            ("explore filter", "Filtered results"),
-            ("explore sort", "Sorted data"),
-        ]
-        for name, needle in markers:
-            record(name, needle in out)
-        record("explore menu shown", "DATASET EXPLORATION MENU" in out)
-    finally:
-        tmp.cleanup()
+        for p in ps:
+            p.start()
+        try:
+            with redirect_stdout(io.StringIO()):
+                app.explore_dataset()
+        finally:
+            for p in ps:
+                p.stop()
+
+    run_with(["1", "5", "8"])
+    record("explore row-count prompt has exit hint", any(hint in p for p in seen))
+
+    run_with(["5", "sales_rep", "8"])
+    record("explore column prompt has exit hint", any(hint in p for p in seen))
+
+    run_with(["7", "quantity", "a", "8"])
+    record("explore sort-order prompt has exit hint", any(hint in p for p in seen))
 
 
 def test_explore_invalid_and_bad_columns() -> None:
-    app, tmp = make_app()
+    app = make_app()
+    out = run_explore(app, ["99", "8"])
+    record("explore invalid option", "Invalid choice" in out)
+
+    # Empty at menu prompt re-prompts (no message), then a valid choice works.
+    out = run_explore(app, ["", "8"])
+    record("explore empty re-prompt no invalid", "Invalid choice" not in out)
+    record("explore empty then exit", out.count("DATASET EXPLORATION MENU") >= 1)
+
+    # Bad column re-prompts in place, then a valid column is accepted.
+    out = run_explore(app, ["5", "not_a_column_xyz", _SAMPLE_COL, "8"])
+    record("explore bad column unique", "Column 'not_a_column_xyz' not found" in out)
+    record("explore bad column unique recovers", f"Unique values in '{_SAMPLE_COL}'" in out)
+
+    out = run_explore(app, ["6", "bad_col", _SAMPLE_COL, _FILTER_VAL, "8"])
+    record("explore bad column filter", "Column 'bad_col' not found" in out)
+    record("explore bad column filter recovers", "Filtered results" in out)
+
+    out = run_explore(app, ["7", "bad_col", "quantity", "a", "8"])
+    record("explore bad column sort", "Column 'bad_col' not found" in out)
+    record("explore bad column sort recovers", "Sorted data" in out)
+
+    # Empty at column prompt re-prompts; valid column then proceeds.
+    out = run_explore(app, ["5", "", _SAMPLE_COL, "8"])
+    record(
+        "explore column empty re-prompt then accepts",
+        f"Unique values in '{_SAMPLE_COL}'" in out,
+    )
+    record(
+        "explore column empty no not-found for blank",
+        "Column '' not found" not in out,
+    )
+
+    # Exit/exit/Quit/quit leave the sub-prompt for the exploration menu.
+    out = run_explore(app, ["5", "exit", "8"])
+    record("explore exit returns to menu", out.count("DATASET EXPLORATION MENU") >= 2)
+    out = run_explore(app, ["5", "EXIT", _SAMPLE_COL, "8"])
+    record(
+        "explore EXIT rejected as exit word",
+        f"Unique values in '{_SAMPLE_COL}'" in out
+        or "Column 'EXIT' not found" in out,
+    )
+    out = run_explore(app, ["5", "cancel", _SAMPLE_COL, "8"])
+    record(
+        "explore cancel is not an exit word",
+        f"Unique values in '{_SAMPLE_COL}'" in out
+        or "Column 'cancel' not found" in out,
+    )
+
+
+def test_explore_row_count_validation() -> None:
+    app = make_app()
+    n_rows = len(app.current_dataset)
+
+    # Zero is out of range: reject, then accept a valid count.
+    out = run_explore(app, ["1", "0", "5", "8"])
+    record("head rejects 0", "between 1 and" in out)
+    record("head accepts valid after reject", "First 5 rows" in out)
+
+    # Above the row count is out of range.
+    out = run_explore(app, ["1", str(n_rows + 1), "5", "8"])
+    record("head rejects above max", "between 1 and" in out)
+
+    # Non-numeric garbage is rejected.
+    out = run_explore(app, ["2", "dkjgd", "5", "8"])
+    record("tail rejects non-numeric", "between 1 and" in out)
+    record("tail accepts valid after reject", "Last 5 rows" in out)
+
+    # Empty input re-prompts (no default); then an explicit count works.
+    out = run_explore(app, ["1", "", "5", "8"])
+    record("head empty then explicit count", "First 5 rows" in out)
+    record("head empty no between-error", out.count("between 1 and") == 0)
+
+
+def test_explore_sort_order_validation() -> None:
+    app = make_app()
+
+    # Garbage direction (and now-invalid yes/no) is rejected, then 'd' is accepted.
+    out = run_explore(app, ["7", "quantity", "maybe", "yes", "d", "8"])
+    record(
+        "sort rejects bad direction",
+        "Please enter 'a' for ascending or 'd' for descending" in out,
+    )
+    record("sort accepts valid after reject", "Sorted data" in out)
+
+
+def test_explore_filter_value_validation() -> None:
+    app = make_app()
+
+    # Numeric column with non-numeric value is rejected, then accepted.
+    out = run_explore(app, ["6", "quantity", "abc", "5", "8"])
+    record("filter rejects non-numeric value", "Please enter a numeric value" in out)
+    record("filter accepts numeric after reject", "Filtered results" in out)
+
+
+def test_explore_sort_only_a_or_d() -> None:
+    app = make_app()
+    # Spelled-out directions are no longer accepted; only 'a'/'d'.
+    out = run_explore(app, ["7", "quantity", "ascending", "a", "8"])
+    record(
+        "sort rejects spelled-out 'ascending'",
+        "Please enter 'a' for ascending or 'd' for descending" in out,
+    )
+    record("sort accepts 'a'", "Sorted data" in out)
+
+    # Uppercase A/D are not accepted.
+    out = run_explore(app, ["7", "quantity", "A", "a", "8"])
+    record(
+        "sort rejects uppercase 'A'",
+        "Please enter 'a' for ascending or 'd' for descending" in out,
+    )
+    record("sort accepts lowercase 'a' after 'A'", "Sorted data" in out)
+
+
+def test_explore_option_loop() -> None:
+    """Each option can be run repeatedly until ESC (here: run twice, then return)."""
+    app = make_app()
+    fake = _input_queue(["1", "5", "10", "8"])
+    repeat = iter([True, False])
+    ps = [
+        patch("builtins.input", side_effect=fake),
+        patch.object(PandasPractice, "wait_for_esc", lambda self: None),
+        patch.object(PandasPractice, "_repeat_or_return", lambda self: next(repeat)),
+    ]
+    for p in ps:
+        p.start()
+    buf = io.StringIO()
     try:
-        out = run_explore(app, ["99", "9"])
-        record("explore invalid option", "Invalid choice" in out)
-
-        out = run_explore(app, ["6", "not_a_column_xyz", "9"])
-        record("explore bad column unique", "Column 'not_a_column_xyz' not found" in out)
-
-        out = run_explore(app, ["7", "bad_col", "9"])
-        record("explore bad column filter", "Column 'bad_col' not found" in out)
-
-        out = run_explore(app, ["8", "bad_col", "9"])
-        record("explore bad column sort", "Column 'bad_col' not found" in out)
+        with redirect_stdout(buf):
+            app.explore_dataset()
     finally:
-        tmp.cleanup()
+        for p in ps:
+            p.stop()
+    out = buf.getvalue()
+    record("option loop first run (5)", "First 5 rows" in out)
+    record("option loop second run (10)", "First 10 rows" in out)
+    record("option loop returns to menu after ESC", out.count("DATASET EXPLORATION MENU") >= 2)
 
 
-# --- Statistics submenu ---
-
-
-def test_statistics_empty_back() -> None:
-    app, tmp = make_app()
-    try:
-        out = run_statistics(app, ["1"])
-        record("stats empty message", "No exercises completed yet" in out)
-        record("stats empty back", "YOUR LEARNING STATISTICS" in out)
-    finally:
-        tmp.cleanup()
-
-
-def test_statistics_empty_invalid() -> None:
-    app, tmp = make_app()
-    try:
-        out = run_statistics(app, ["2", "1"])
-        record("stats empty invalid", out.count("Invalid choice") >= 1)
-    finally:
-        tmp.cleanup()
-
-
-def test_statistics_with_data_and_back() -> None:
-    progress = {
-        "exercise_stats": {
-            "exercise_1": {"count": 1, "total_grade": 62.5, "grades": [62.5]},
-        },
-        "last_session": "2026-06-01T12:00:00",
-    }
-    app, tmp = make_app(progress)
-    try:
-        out = run_statistics(app, ["2"])
-        record("stats shows exercise", "Exercise 1: Basic Operations" in out)
-        record("stats shows grade", "Average Grade" in out)
-        record("stats shows session", "Last Session" in out)
-    finally:
-        tmp.cleanup()
-
-
-def test_statistics_reset_cancel() -> None:
-    progress = {
-        "exercise_stats": {
-            "exercise_2": {"count": 1, "total_grade": 50.0, "grades": [50.0]},
-        },
-        "last_session": "2026-06-01T12:00:00",
-    }
-    app, tmp = make_app(progress)
-    try:
-        out = run_statistics(app, ["1", "no", "2"])
-        record("stats reset cancelled", "Reset cancelled" in out)
-        record("stats still has data after cancel", "exercise_2" in str(app.progress))
-    finally:
-        tmp.cleanup()
-
-
-def test_statistics_reset_confirm() -> None:
-    progress = {
-        "exercise_stats": {
-            "exercise_3": {"count": 1, "total_grade": 100.0, "grades": [100.0]},
-        },
-        "last_session": "2026-06-01T12:00:00",
-    }
-    app, tmp = make_app(progress)
-    try:
-        run_statistics(app, ["1", "yes"])
-        record(
-            "stats reset confirm",
-            app.progress.get("exercise_stats") == {},
-        )
-    finally:
-        tmp.cleanup()
-
-
-def test_statistics_invalid_then_back() -> None:
-    progress = {
-        "exercise_stats": {
-            "exercise_4": {"count": 1, "total_grade": 25.0, "grades": [25.0]},
-        },
-        "last_session": "2026-06-01T12:00:00",
-    }
-    app, tmp = make_app(progress)
-    try:
-        out = run_statistics(app, ["9", "2"])
-        record("stats invalid choice", "Invalid choice" in out)
-    finally:
-        tmp.cleanup()
-
-
-# --- Plot tasks (task 8) — no display window ---
+def test_main_menu_flat_options() -> None:
+    app = make_app()
+    buf = io.StringIO()
+    fake = _input_queue(["7"])
+    with patch("builtins.input", side_effect=fake):
+        with redirect_stdout(buf):
+            app.main_menu()
+    out = buf.getvalue()
+    record("flat menu basic ops", "1. Basic Operations" in out)
+    record("flat menu explore", "6. Explore Dataset" in out)
+    record("flat menu no statistics", "Statistics" not in out)
+    record("flat menu goodbye", "👋" in out)
 
 
 def test_execute_plot_code_no_gui() -> None:
-    app, tmp = make_app()
-    try:
-        df = app.current_dataset
-        code = "df.plot(x='quantity', y='total_sales', kind='scatter')"
-        show_mock = MagicMock()
-        with patch("matplotlib.pyplot.show", show_mock):
-            result, err = app.execute_pandas_code(df, code, include_plotting=True)
-        record("plot execute no error", err is None, repr(err))
-        record("plot show not required for pass", result is None or err is None)
-        record("plt.show not called", show_mock.call_count == 0)
-    finally:
-        tmp.cleanup()
+    app = make_app()
+    df = app.current_dataset
+    code = "df.plot(x='quantity', y='total_sales', kind='scatter')"
+    show_mock = MagicMock()
+    with patch("matplotlib.pyplot.show", show_mock):
+        result, err = app.execute_pandas_code(df, code, include_plotting=True)
+    record("plot execute no error", err is None, repr(err))
+    record("plot show not required for pass", result is None or err is None)
+    record("plt.show not called", show_mock.call_count == 0)
 
 
 def test_plot_task_correct(ex_num: int, task_num: int = 8) -> None:
-    app, tmp = make_app()
-    try:
-        discover = ["skip"] * task_num + ["exit"]
-        out = run_exercise(app, ex_num, discover)
-        golden = parse_skip_answer(out)
-        record(f"ex{ex_num} plot golden discovered", bool(golden), repr(golden))
-        if not golden:
-            return
-        trial = ["skip"] * (task_num - 1) + [golden, "exit"]
-        show_mock = MagicMock()
-        with patch("matplotlib.pyplot.show", show_mock):
-            out2 = run_exercise(app, ex_num, trial)
-        record(
-            f"ex{ex_num} task{task_num} plot correct",
-            "✅ Correct!" in out2 and "non-interactive" in out.lower() or "✅ Correct!" in out2,
-        )
-        record(f"ex{ex_num} plot no plt.show", show_mock.call_count == 0)
-    finally:
-        tmp.cleanup()
+    app = make_app()
+    discover = ["skip"] * task_num + ["exit"]
+    out = run_exercise(app, ex_num, discover)
+    golden = parse_skip_answer(out)
+    record(f"ex{ex_num} plot golden discovered", bool(golden), repr(golden))
+    if not golden:
+        return
+    trial = ["skip"] * (task_num - 1) + [golden, "exit"]
+    show_mock = MagicMock()
+    with patch("matplotlib.pyplot.show", show_mock):
+        out2 = run_exercise(app, ex_num, trial)
+    record(
+        f"ex{ex_num} task{task_num} plot correct",
+        "✓ Correct!" in out2,
+    )
+    record(f"ex{ex_num} plot no plt.show", show_mock.call_count == 0)
 
 
 def test_plot_task_wrong(ex_num: int, task_num: int = 8) -> None:
-    app, tmp = make_app()
-    try:
-        inputs = ["skip"] * (task_num - 1) + ["bad", "bad", "bad", "exit"]
-        out = run_exercise(app, ex_num, inputs)
-        record(
-            f"ex{ex_num} task{task_num} plot wrong",
-            out.count("CORRECT ANSWER") >= 1 and "Incorrect" in out,
-        )
-    finally:
-        tmp.cleanup()
+    app = make_app()
+    inputs = ["skip"] * (task_num - 1) + ["bad", "bad", "bad", "exit"]
+    out = run_exercise(app, ex_num, inputs)
+    record(
+        f"ex{ex_num} task{task_num} plot wrong",
+        out.count("Correct answer:") >= 1 and "Incorrect" in out,
+    )
 
 
 def main() -> int:
@@ -349,17 +395,18 @@ def main() -> int:
     t0 = time.perf_counter()
 
     print("=" * 70)
-    print("QA Developer — B002 menus / stats / plots (lightweight)")
+    print("QA Developer — B002 menus / plots (lightweight)")
     print("=" * 70)
 
     test_explore_happy_path_all_options()
+    test_explore_exit_hint_on_typed_prompts()
     test_explore_invalid_and_bad_columns()
-    test_statistics_empty_back()
-    test_statistics_empty_invalid()
-    test_statistics_with_data_and_back()
-    test_statistics_reset_cancel()
-    test_statistics_reset_confirm()
-    test_statistics_invalid_then_back()
+    test_explore_row_count_validation()
+    test_explore_sort_order_validation()
+    test_explore_filter_value_validation()
+    test_explore_sort_only_a_or_d()
+    test_explore_option_loop()
+    test_main_menu_flat_options()
     test_execute_plot_code_no_gui()
     for ex in (1, 2, 4):
         test_plot_task_correct(ex)

@@ -12,7 +12,9 @@ From this directory:
 python3 main.py
 ```
 
-Choose menu options **1–10** for exercise batches, **11** or `exit` to quit.
+Choose menu options **1–10** for exercise batches, **`11` or `exit`** (lowercase exact) to quit.
+
+During a batch you can type **`skip`** / **`Skip`** to skip a question, or **`exit`** / **`quit`** (any listed casing) to return to the main menu. Empty lines do not count as attempts. Strike 1 may show a hint (batch 1 has none). Batch 2 True/False questions allow **one attempt** only.
 
 ## Verify (developers)
 
@@ -22,6 +24,7 @@ Regression scripts live next to `main.py`. Run them from this directory; each ex
 python3 verify_exercise_checks_parity.py
 python3 verify_project_smoke.py
 python3 verify_answer_behavior.py
+python3 verify_flow_b009.py
 ```
 
 They exercise graders, pool wiring, and session behavior; they are **not** a full replacement for trying the menu yourself.
@@ -30,9 +33,12 @@ They exercise graders, pool wiring, and session behavior; they are **not** a ful
 
 | Piece | Role |
 |--------|------|
-| `main.py` | Menu and batch wiring |
-| `session_runner.py` | Shared interactive loop, banners, statistics |
-| `exercise_checks.py` | Normalizers and exact-answer checks |
+| `main.py` | Thin entry point |
+| `app.py` | Menu shell (`PythonBasics`) |
+| `engine.py` | Shared interactive loop, banners, statistics |
+| `session_common.py` | Skip/exit commands, partial exit score (B009) |
+| `hints.py` | Strike-1 hint templates (B009) |
+| `validators.py` | Normalizers and exact-answer checks |
 | `batch_*_exercises.py` | Topic pools and session builders |
 | `verify_*.py` | Automated checks |
 
